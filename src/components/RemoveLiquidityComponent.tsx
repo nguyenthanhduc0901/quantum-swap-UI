@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, VStack, Heading, Text, HStack, Button, Link as ChakraLink } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink } from "@chakra-ui/react";
 import type { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useWriteContract } from "wagmi";
 import pairAbi from "../constants/abi/QuantumSwapPair.json";
@@ -83,14 +83,21 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
 
   return (
     <Box maxW="560px" w="100%" borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
-      <VStack align="stretch" spacing={4}>
+      <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Remove Liquidity</Heading>
         <Text color="gray.600">Pair: {pairAddress}</Text>
         <Box borderTopWidth="1px" borderColor="gray.200" />
 
         <Text fontSize="sm" color="gray.600">Select percentage</Text>
-        <Box as="input" type="range" min={0} max={100} step={1} value={percentageToRemove}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPercentageToRemove(Number(e.target.value))} w="100%" />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={percentageToRemove}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPercentageToRemove(Number(e.target.value))}
+          style={{ width: "100%" }}
+        />
         <HStack justify="space-between">
           <HStack>
             <Button size="sm" onClick={() => setPercentageToRemove(25)}>25%</Button>
@@ -102,25 +109,27 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
         </HStack>
 
         <Box borderTopWidth="1px" borderColor="gray.200" />
-        <VStack align="stretch" spacing={1}>
+        <Flex direction="column" align="stretch" gap={1}>
           <Text fontWeight="semibold">You will receive:</Text>
           <Text>Token0: {amount0ToReceive.toString()}</Text>
           <Text>Token1: {amount1ToReceive.toString()}</Text>
-        </VStack>
+        </Flex>
 
         <Text color="gray.600" fontSize="sm">Price: 1 token0 = {(reserve1 && reserve0) ? (Number(reserve1) / Math.max(Number(reserve0), 1)).toFixed(6) : "-"} token1</Text>
 
         <HStack justify="space-between" pt={2}>
           <ChakraLink as={NextLink} href="/pool" color="teal.600">Back to Pool</ChakraLink>
           {needsApproval ? (
-            <Button colorScheme="teal" onClick={onApprove} isLoading={status === "approving"} isDisabled={amountLpToBurn === 0n}>Approve</Button>
+            <Button colorScheme="teal" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n}>Approve</Button>
           ) : (
-            <Button colorScheme="teal" onClick={onRemove} isLoading={status === "removing"} isDisabled={amountLpToBurn === 0n}>Remove</Button>
+            <Button colorScheme="teal" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n}>Remove</Button>
           )}
         </HStack>
-      </VStack>
+      </Flex>
     </Box>
   );
 }
+
+
 
 

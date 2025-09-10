@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Container, Flex } from "@chakra-ui/react";
 import { RemoveLiquidityComponent } from "../../../../components/RemoveLiquidityComponent";
 
-type Params = { params: { pairAddress: string } };
-export default function RemoveLiquidityPage({ params }: Params) {
-  const pairAddress = params.pairAddress ?? "0x0000000000000000000000000000000000000000";
+export default function RemoveLiquidityPage(props: any) {
+  const pairAddress = props?.params?.pairAddress ?? "0x0000000000000000000000000000000000000000";
   return (
     <Container maxW="container.lg" py={10}>
       <Flex justify="center">

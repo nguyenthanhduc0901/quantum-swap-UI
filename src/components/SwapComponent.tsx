@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, VStack, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
+import { Box, Flex, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
 import { useAccount, useChainId, useReadContract, useWriteContract } from "wagmi";
@@ -144,10 +144,10 @@ export function SwapComponent() {
 
   return (
     <Box maxW="480px" w="100%" borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
-      <VStack align="stretch" spacing={4}>
+      <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Swap</Heading>
 
-        <VStack align="stretch" spacing={2}>
+        <Flex direction="column" align="stretch" gap={2}>
           <Text fontSize="sm" color="gray.600">From</Text>
           <HStack>
             <Button onClick={() => setSelecting("in")} variant="outline">
@@ -155,16 +155,16 @@ export function SwapComponent() {
             </Button>
             <Input type="number" placeholder="0.0" value={inputAmount} onChange={(e) => { setInputAmount(e.target.value); setOutputAmount(""); }} />
           </HStack>
-        </VStack>
+        </Flex>
 
         <HStack justify="center">
-          <IconButton aria-label="invert" icon={<Box as="span">⇅</Box>} onClick={() => {
+          <IconButton aria-label="invert" onClick={() => {
             const a = inputToken; const b = outputToken; setInputToken(b); setOutputToken(a);
             const ai = inputAmount; const ao = outputAmount; setInputAmount(ao); setOutputAmount(ai);
           }} />
         </HStack>
 
-        <VStack align="stretch" spacing={2}>
+        <Flex direction="column" align="stretch" gap={2}>
           <Text fontSize="sm" color="gray.600">To</Text>
           <HStack>
             <Button onClick={() => setSelecting("out")} variant="outline">
@@ -172,12 +172,12 @@ export function SwapComponent() {
             </Button>
             <Input type="number" placeholder="0.0" value={outputAmount} onChange={(e) => { setOutputAmount(e.target.value); setInputAmount(""); }} />
           </HStack>
-        </VStack>
+        </Flex>
 
-        <Button colorScheme="teal" onClick={onAction} isLoading={txStatus === "approving" || txStatus === "swapping"}>
+        <Button colorScheme="teal" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
           {actionLabel}
         </Button>
-      </VStack>
+      </Flex>
 
       <TokenSelectModal
         isOpen={Boolean(selecting)}

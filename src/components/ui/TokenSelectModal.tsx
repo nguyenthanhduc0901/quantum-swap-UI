@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Button, HStack, Image, Input, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, HStack, Image, Input, Text, Flex } from "@chakra-ui/react";
 import { useChainId } from "wagmi";
 import { TokenInfo, getDefaultTokens } from "../../constants/tokens";
 
@@ -39,20 +39,20 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
         <Text fontWeight="bold" mb={3} fontSize="lg">
           Select a token
         </Text>
-        <VStack spacing={3} align="stretch" pb={2}>
+        <Flex direction="column" align="stretch" gap={3} pb={2}>
           <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <VStack spacing={1} align="stretch" maxH="320px" overflowY="auto">
+          <Flex direction="column" align="stretch" gap={1} maxH="320px" overflowY="auto">
             {filtered.map((t) => (
               <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start">
-                <HStack spacing={3}>
+                <HStack gap={3}>
                   {t.logoURI ? <Image src={t.logoURI} alt={t.symbol} boxSize="20px" /> : <Box boxSize="20px" bg="gray.200" rounded="full" />}
                   <Text fontWeight="semibold">{t.symbol}</Text>
                   <Text color="gray.500">{t.name}</Text>
                 </HStack>
               </Button>
             ))}
-          </VStack>
-        </VStack>
+          </Flex>
+        </Flex>
         <Button onClick={onClose} mt={2} w="full">Close</Button>
       </Box>
     </Box>
