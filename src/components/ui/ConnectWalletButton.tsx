@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Flex, Text, HStack } from "@chakra-ui/react";
 import { useAccount, useConnect, useDisconnect, useEnsName } from "wagmi";
 
@@ -15,6 +15,11 @@ export function ConnectWalletButton() {
   const { disconnect } = useDisconnect();
   const { data: ensName } = useEnsName({ address: account.address });
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const label = useMemo(() => ensName || truncateAddress(account.address), [ensName, account.address]);
 
@@ -50,22 +55,25 @@ export function ConnectWalletButton() {
       <Button colorScheme="teal" onClick={() => setOpen((v) => !v)} loading={isPending}>
         Connect Wallet
       </Button>
-      {open && (
+      {open && mounted && (
         <Box position="absolute" right={0} mt={2} bg="white" borderWidth="1px" borderColor="gray.200" rounded="md" shadow="md" w="260px" p={3} zIndex={10}>
           <Flex direction="column" align="stretch" gap={3}>
-            {connectors.map((connector) => (
-              <Button
-                key={connector.uid}
-                onClick={async () => {
-                  await connect({ connector });
-                  setOpen(false);
-                }}
-                disabled={!connector.ready}
-              >
-                {connector.name}
-                {!connector.ready && <Text as="span" ml={2} color="gray.500">(unsupported)</Text>}
-              </Button>
-            ))}
+            {connectors.map((connector) => {
+              const supported = typeof window !== "undefined" && "ethereum" in window;
+              return (
+                <Button
+                  key={connector.uid}
+                  onClick={async () => {
+                    await connect({ connector });
+                    setOpen(false);
+                  }}
+                  disabled={!supported}
+                >
+                  {connector.name}
+                  {!supported && <Text as="span" ml={2} color="gray.500">(unsupported)</Text>}
+                </Button>
+              );
+            })}
           </Flex>
         </Box>
       )}

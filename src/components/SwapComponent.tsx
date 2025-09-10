@@ -4,11 +4,13 @@ import { useMemo, useState } from "react";
 import { Box, Flex, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
-import { useAccount, useChainId, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import type { Abi } from "viem";
 import routerAbi from "../constants/abi/QuantumSwapRouter.json";
 import erc20Abi from "../constants/abi/QuantumSwapPair.json"; // contains ERC20 ABI subset for demo (balance/allowance/approve)
 import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
+import { Balance } from "./ui/Balance";
+import { useTransactionStatus } from "../hooks/useTransactionStatus";
 
 function useDebounce<T>(value: T, delay = 400) {
   const [debounced, setDebounced] = useState(value);
@@ -34,6 +36,7 @@ export function SwapComponent() {
   const [txStatus, setTxStatus] = useState<
     "idle" | "pendingApproval" | "approving" | "pendingSwap" | "swapping" | "success" | "error"
   >("idle");
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
 
   const debouncedIn = useDebounce(inputAmount, 400);
   const debouncedOut = useDebounce(outputAmount, 400);
@@ -83,6 +86,14 @@ export function SwapComponent() {
   });
 
   const { writeContractAsync } = useWriteContract();
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, query: { enabled: Boolean(txHash) } });
+  useTransactionStatus({
+    isPending: !!txHash && receipt.isLoading,
+    isSuccess: receipt.isSuccess,
+    isError: receipt.isError,
+    error: receipt.error,
+    hash: txHash as string,
+  });
 
   const needsApproval = useMemo(() => {
     if (!inputAmount || !allowance.data || !inputToken) return false;
@@ -98,12 +109,13 @@ export function SwapComponent() {
     if (!inputToken) return;
     setTxStatus("approving");
     try {
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: inputToken.address,
         abi: erc20Abi.abi as Abi,
         functionName: "approve",
         args: [router, BigInt(2) ** BigInt(256) - BigInt(1)],
       });
+      setTxHash(hash as `0x${string}`);
       setTxStatus("pendingSwap");
     } catch {
       setTxStatus("error");
@@ -115,12 +127,13 @@ export function SwapComponent() {
     setTxStatus("swapping");
     try {
       const amountIn = BigInt(Math.floor(Number(inputAmount) * 10 ** (inputToken.decimals || 18)));
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: router,
         abi: routerAbi.abi as Abi,
         functionName: "swapExactTokensForTokens",
         args: [amountIn, 0n, path, account.address!, BigInt(Math.floor(Date.now() / 1000) + 1800)],
       });
+      setTxHash(hash as `0x${string}`);
       setTxStatus("success");
     } catch {
       setTxStatus("error");
@@ -155,6 +168,7 @@ export function SwapComponent() {
             </Button>
             <Input type="number" placeholder="0.0" value={inputAmount} onChange={(e) => { setInputAmount(e.target.value); setOutputAmount(""); }} />
           </HStack>
+          {inputToken && <Balance tokenAddress={inputToken.address} />}
         </Flex>
 
         <HStack justify="center">
@@ -172,6 +186,7 @@ export function SwapComponent() {
             </Button>
             <Input type="number" placeholder="0.0" value={outputAmount} onChange={(e) => { setOutputAmount(e.target.value); setInputAmount(""); }} />
           </HStack>
+          {outputToken && <Balance tokenAddress={outputToken.address} />}
         </Flex>
 
         <Button colorScheme="teal" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>

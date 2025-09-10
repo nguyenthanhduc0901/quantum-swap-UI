@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink, Skeleton } from "@chakra-ui/react";
 import type { Abi } from "viem";
-import { useAccount, useChainId, useReadContract, useWriteContract } from "wagmi";
+import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useTransactionStatus } from "../hooks/useTransactionStatus";
 import pairAbi from "../constants/abi/QuantumSwapPair.json";
 import routerAbi from "../constants/abi/QuantumSwapRouter.json";
 import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
@@ -26,6 +27,9 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
   const [token0, setToken0] = useState<`0x${string}` | null>(null);
   const [token1, setToken1] = useState<`0x${string}` | null>(null);
   const [status, setStatus] = useState<"idle" | "approving" | "removing" | "success" | "error">("idle");
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+  const receipt = useWaitForTransactionReceipt({ hash: txHash, query: { enabled: Boolean(txHash) } });
+  useTransactionStatus({ isPending: !!txHash && receipt.isLoading, isSuccess: receipt.isSuccess, isError: receipt.isError, error: receipt.error, hash: txHash as string });
 
   // Reads
   const balRead = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "balanceOf", args: user ? [user] : undefined, query: { enabled: Boolean(user) } });
@@ -58,7 +62,8 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
     if (!user) return;
     setStatus("approving");
     try {
-      await writeContractAsync({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "approve", args: [router, BigInt(2) ** BigInt(256) - 1n] });
+      const hash = await writeContractAsync({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "approve", args: [router, BigInt(2) ** BigInt(256) - 1n] });
+      setTxHash(hash as `0x${string}`);
       setStatus("idle");
     } catch {
       setStatus("error");
@@ -69,20 +74,25 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
     if (!user || !token0 || !token1) return;
     setStatus("removing");
     try {
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: router,
         abi: routerAbi.abi as Abi,
         functionName: "removeLiquidity",
         args: [token0, token1, amountLpToBurn, 0n, 0n, user, BigInt(Math.floor(Date.now() / 1000) + 1800)],
       });
+      setTxHash(hash as `0x${string}`);
       setStatus("success");
     } catch {
       setStatus("error");
     }
   }
 
+  const loadingData = token0 === null || token1 === null || totalSupply === 0n;
   return (
     <Box maxW="560px" w="100%" borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
+      {loadingData ? (
+        <Skeleton height="220px" />
+      ) : (
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Remove Liquidity</Heading>
         <Text color="gray.600">Pair: {pairAddress}</Text>
@@ -126,6 +136,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
           )}
         </HStack>
       </Flex>
+      )}
     </Box>
   );
 }
