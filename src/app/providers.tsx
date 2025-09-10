@@ -1,8 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { CacheProvider } from "@chakra-ui/next-js";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { mainnet, sepolia, hardhat } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,13 +19,11 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <CacheProvider>
-      <ChakraProvider>
-        <WagmiProvider config={wagmiConfig}>
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        </WagmiProvider>
-      </ChakraProvider>
-    </CacheProvider>
+    <ChakraProvider value={defaultSystem}>
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      </WagmiProvider>
+    </ChakraProvider>
   );
 }
 
