@@ -31,14 +31,14 @@ export function ConnectWalletButton() {
 
     return (
       <Box position="relative">
-        <Button onClick={() => setOpen((v) => !v)} variant="outline" colorScheme="brand" _hover={{ bg: "whiteAlpha.200" }}>
-          <HStack gap={2}>
-            <Box as="span" px={2} py={1} rounded="md" bg="whiteAlpha.200" color="fg" fontSize="xs">
+        <Button onClick={() => setOpen((v) => !v)} variant="outline" colorScheme="brand" _hover={{ bg: "gray.100" }} h={9} px={3}>
+          <HStack gap={2} align="center">
+            <Box as="span" px={2} h={5} display="inline-flex" alignItems="center" rounded="md" bg="gray.100" color="fg" fontSize="xs">
               {chainName}
             </Box>
             <Text>{bal} {nativeBalance?.symbol ?? "ETH"}</Text>
-          <Text fontWeight="semibold">{label}</Text>
-        </HStack>
+            <Text fontWeight="semibold">{label}</Text>
+          </HStack>
         </Button>
         {open && (
           <Box position="absolute" right={0} mt={2} bg="panelBg" borderWidth="1px" borderColor="panelBorder" rounded="md" shadow="md" w="280px" p={3} zIndex={10}>
@@ -59,7 +59,7 @@ export function ConnectWalletButton() {
 
   return (
     <Box position="relative">
-      <Button colorScheme="brand" onClick={() => setOpen((v) => !v)} loading={isPending}>
+      <Button colorScheme="brand" onClick={() => setOpen((v) => !v)} loading={isPending} h={9} px={3}>
         Connect Wallet
       </Button>
       {open && mounted && (
