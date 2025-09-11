@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Center, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
 import { LiquidityPositionCard } from "./LiquidityPositionCard";
 
 type Position = { pairAddress: `0x${string}`; token0Symbol?: string; token1Symbol?: string };
@@ -21,12 +21,10 @@ export function YourLiquidityComponent() {
 
   if (isLoading) {
     return (
-      <Center py={10}>
-        <VStack>
-          <Spinner color="teal.500" />
-          <Text color="gray.600">Fetching your positions...</Text>
-        </VStack>
-      </Center>
+      <Flex direction="column" align="center" justify="center" py={10} gap={2}>
+        <Spinner color="teal.500" />
+        <Text color="gray.600">Fetching your positions...</Text>
+      </Flex>
     );
   }
 
@@ -38,12 +36,13 @@ export function YourLiquidityComponent() {
     );
   }
   return (
-    <VStack align="stretch" gap={3}>
+    <Flex direction="column" align="stretch" gap={3}>
       {positions.map((p) => (
         <LiquidityPositionCard key={p.pairAddress} pairAddress={p.pairAddress} token0Symbol={p.token0Symbol} token1Symbol={p.token1Symbol} />
       ))}
-    </VStack>
+    </Flex>
   );
 }
+
 
 

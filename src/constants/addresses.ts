@@ -21,3 +21,4 @@ export type QuantumSwapAddresses = (typeof CONTRACTS_BY_CHAIN)[keyof typeof CONT
 export function getContracts(chainId: number) {
   return CONTRACTS_BY_CHAIN[chainId as keyof typeof CONTRACTS_BY_CHAIN];
 }
+
