@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Button, Flex, Image, Input, Text } from "@chakra-ui/react";
+import { FaEthereum, FaCoins } from "react-icons/fa";
 import { Balance } from "./Balance";
 import type { TokenInfo } from "@/constants/tokens";
 
@@ -11,6 +12,13 @@ type Props = {
   onAmountChange: (value: string) => void;
   onTokenSelect: () => void;
 };
+
+function getIconForSymbol(symbol?: string) {
+  const s = symbol?.toUpperCase();
+  if (s === "ETH" || s === "WETH") return FaEthereum;
+  if (s === "USDC" || s === "USDT" || s === "DAI") return FaCoins;
+  return FaCoins;
+}
 
 export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect }: Props) {
   return (
@@ -29,7 +37,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
               {token?.logoURI ? (
                 <Image src={token.logoURI} alt={token.symbol} boxSize="20px" rounded="full" />
               ) : (
-                <Box boxSize="20px" bg="whiteAlpha.300" rounded="full" />
+                <Box as={getIconForSymbol(token?.symbol)} boxSize="20px" color="brand.600" />
               )}
               <Text fontWeight="semibold">{token?.symbol ?? "Select Token"}</Text>
             </Flex>
