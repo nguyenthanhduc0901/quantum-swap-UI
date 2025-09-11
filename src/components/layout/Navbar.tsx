@@ -24,7 +24,10 @@ export function Navbar() {
               as={NextLink}
               href="/swap"
               px={3}
-              py={1}
+              py={0}
+              h={9}
+              display="inline-flex"
+              alignItems="center"
               rounded="md"
               bg={isActive("/swap") ? "gray.100" : "transparent"}
               color={isActive("/swap") ? "brand.600" : "fg"}
@@ -36,7 +39,10 @@ export function Navbar() {
               as={NextLink}
               href="/pool"
               px={3}
-              py={1}
+              py={0}
+              h={9}
+              display="inline-flex"
+              alignItems="center"
               rounded="md"
               bg={isActive("/pool") ? "gray.100" : "transparent"}
               color={isActive("/pool") ? "brand.600" : "fg"}
