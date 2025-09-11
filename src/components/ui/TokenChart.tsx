@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { IChartApi, ISeriesApi, AreaSeriesPartialOptions } from "lightweight-charts";
-import { createChart } from "lightweight-charts";
+import type { IChartApi, ISeriesApi } from "lightweight-charts";
 
 type Point = { time: number; value: number };
 
@@ -18,40 +17,52 @@ export function TokenChart({ data, height = 280 }: Props) {
 
   useEffect(() => {
     if (!containerRef.current || chartRef.current) return;
-    const chart = createChart(containerRef.current, {
-      layout: { background: { color: "#0f172a" }, textColor: "#e2e8f0" },
-      rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false },
-      grid: { vertLines: { color: "rgba(255,255,255,0.04)" }, horzLines: { color: "rgba(255,255,255,0.04)" } },
-      crosshair: { mode: 0 },
-      height,
-    });
-    chartRef.current = chart;
+    let chartLocal: IChartApi | null = null;
+    let cleanup: (() => void) | null = null;
+    (async () => {
+      const lib = await import("lightweight-charts");
+      const chart = lib.createChart(containerRef.current as HTMLDivElement, {
+        layout: { background: { color: "#0f172a" }, textColor: "#e2e8f0" },
+        rightPriceScale: { borderVisible: false },
+        timeScale: { borderVisible: false },
+        grid: { vertLines: { color: "rgba(255,255,255,0.04)" }, horzLines: { color: "rgba(255,255,255,0.04)" } },
+        crosshair: { mode: 0 },
+        height,
+      });
+      chartRef.current = chart;
+      chartLocal = chart;
+      const series = chart.addAreaSeries({
+        topColor: "rgba(0, 188, 212, 0.4)",
+        bottomColor: "rgba(0, 188, 212, 0.0)",
+        lineColor: "#00bcd4",
+        lineWidth: 2,
+      });
+      seriesRef.current = series;
+      series.setData(data);
 
-    const areaOptions: AreaSeriesPartialOptions = {
-      topColor: "rgba(0, 188, 212, 0.4)",
-      bottomColor: "rgba(0, 188, 212, 0.0)",
-      lineColor: "#00bcd4",
-      lineWidth: 2,
-    };
-    const series = chart.addAreaSeries(areaOptions);
-    seriesRef.current = series;
-    series.setData(data);
-
-    const handleResize = () => {
-      if (!containerRef.current || !chartRef.current) return;
-      const { width } = containerRef.current.getBoundingClientRect();
-      chartRef.current.applyOptions({ width });
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
+      const handleResize = () => {
+        if (!containerRef.current || !chartRef.current) return;
+        const { width } = containerRef.current.getBoundingClientRect();
+        chartRef.current.applyOptions({ width });
+      };
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      cleanup = () => {
+        window.removeEventListener("resize", handleResize);
+        chart.remove();
+        chartRef.current = null;
+        seriesRef.current = null;
+      };
+    })();
     return () => {
-      window.removeEventListener("resize", handleResize);
-      chart.remove();
+      if (cleanup) cleanup();
+      if (chartLocal) {
+        try { chartLocal.remove(); } catch {}
+      }
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, [height]);
+  }, [height, data]);
 
   useEffect(() => {
     if (seriesRef.current) {
