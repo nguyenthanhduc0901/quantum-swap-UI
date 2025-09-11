@@ -1,7 +1,8 @@
 "use client";
 import { Container, Flex, Heading } from "@chakra-ui/react";
-import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
+// import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
 import { YourLiquidityComponent } from "@/components/YourLiquidityComponent";
+import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
 
 export default function PoolPage() {
   return (

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Flex, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
+import { FaArrowsAltV } from "react-icons/fa";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
@@ -156,7 +157,7 @@ export function SwapComponent() {
   }
 
   return (
-    <Box maxW="480px" w="100%" borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
+    <Box maxW="480px" w="100%" borderWidth="1px" borderColor="whiteAlpha.200" rounded="lg" p={5} bg="whiteAlpha.100" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Swap</Heading>
 
@@ -172,7 +173,7 @@ export function SwapComponent() {
         </Flex>
 
         <HStack justify="center">
-          <IconButton aria-label="invert" onClick={() => {
+          <IconButton aria-label="invert" variant="ghost" colorScheme="brand" icon={<FaArrowsAltV />} onClick={() => {
             const a = inputToken; const b = outputToken; setInputToken(b); setOutputToken(a);
             const ai = inputAmount; const ao = outputAmount; setInputAmount(ao); setOutputAmount(ai);
           }} />
@@ -189,7 +190,7 @@ export function SwapComponent() {
           {outputToken && <Balance tokenAddress={outputToken.address} />}
         </Flex>
 
-        <Button colorScheme="teal" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
+        <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
           {actionLabel}
         </Button>
       </Flex>
