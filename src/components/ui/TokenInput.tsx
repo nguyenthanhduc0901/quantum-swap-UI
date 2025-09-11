@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, Button, Flex, Image, Input, Text } from "@chakra-ui/react";
 import { FaEthereum, FaCoins } from "react-icons/fa";
 import { Balance } from "./Balance";
@@ -21,6 +22,8 @@ function getIconForSymbol(symbol?: string) {
 }
 
 export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect }: Props) {
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => { setImgFailed(false); }, [token?.logoURI, token?.symbol]);
   return (
     <Flex direction="column" gap={2}>
       <Flex justify="space-between" align="center">
@@ -34,8 +37,8 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
         <Flex align="center" gap={3}>
           <Button onClick={onTokenSelect} variant="outline" colorScheme="brand" _hover={{ bg: "whiteAlpha.200" }}>
             <Flex align="center" gap={2}>
-              {token?.logoURI ? (
-                <Image src={token.logoURI} alt={token.symbol} boxSize="20px" rounded="full" />
+              {token?.logoURI && !imgFailed ? (
+                <Image src={token.logoURI} alt={token.symbol} boxSize="20px" rounded="full" onError={() => setImgFailed(true)} />
               ) : (
                 <Box as={getIconForSymbol(token?.symbol)} boxSize="20px" color="brand.600" />
               )}
