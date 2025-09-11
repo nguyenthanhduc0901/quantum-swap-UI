@@ -25,7 +25,7 @@ export function AddLiquidityComponent() {
           <Text fontSize="sm" color="gray.600">Token A</Text>
           <HStack>
             <Button variant="outline" onClick={() => setSelecting("A")}>{tokenA?.symbol ?? "Select"}</Button>
-            <Input type="number" placeholder="0.0" value={amountA} onChange={(e) => setAmountA(e.target.value)} focusBorderColor="brand.500" />
+            <Input type="number" placeholder="0.0" value={amountA} onChange={(e) => setAmountA(e.target.value)} />
           </HStack>
         </Flex>
 
@@ -33,7 +33,7 @@ export function AddLiquidityComponent() {
           <Text fontSize="sm" color="gray.600">Token B</Text>
           <HStack>
             <Button variant="outline" onClick={() => setSelecting("B")}>{tokenB?.symbol ?? "Select"}</Button>
-            <Input type="number" placeholder="0.0" value={amountB} onChange={(e) => setAmountB(e.target.value)} focusBorderColor="brand.500" />
+            <Input type="number" placeholder="0.0" value={amountB} onChange={(e) => setAmountB(e.target.value)} />
           </HStack>
         </Flex>
 

@@ -42,7 +42,6 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
               inputMode="decimal"
               type="number"
               variant="outline"
-              focusBorderColor="brand.500"
               fontSize="2xl"
               textAlign="right"
             />

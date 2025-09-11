@@ -42,7 +42,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
           Select a token
         </Text>
         <Flex direction="column" align="stretch" gap={3} pb={2}>
-          <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} focusBorderColor="brand.500" />
+          <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} />
           <Flex direction="column" align="stretch" gap={1} maxH="320px" overflowY="auto">
             {filtered.map((t) => (
               <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start" _hover={{ bg: "whiteAlpha.200" }}>
