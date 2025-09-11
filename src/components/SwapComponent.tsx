@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Flex, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
+import { Box, Flex, HStack, Heading, Button, Text, IconButton, Collapse, useDisclosure, ModalRoot, ModalBody, ModalHeader, ModalFooter, ModalContent, ModalOverlay } from "@chakra-ui/react";
 import { FiArrowUpDown } from "react-icons/fi";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
@@ -10,8 +10,8 @@ import type { Abi } from "viem";
 import routerAbi from "../constants/abi/QuantumSwapRouter.json";
 import erc20Abi from "../constants/abi/QuantumSwapPair.json"; // contains ERC20 ABI subset for demo (balance/allowance/approve)
 import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
-import { Balance } from "./ui/Balance";
 import { useTransactionStatus } from "../hooks/useTransactionStatus";
+import { TokenInput } from "./ui/TokenInput";
 
 function useDebounce<T>(value: T, delay = 400) {
   const [debounced, setDebounced] = useState(value);
@@ -38,6 +38,9 @@ export function SwapComponent() {
     "idle" | "pendingApproval" | "approving" | "pendingSwap" | "swapping" | "success" | "error"
   >("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+  const [slippageTolerance, setSlippageTolerance] = useState<number>(0.5);
+  const settings = useDisclosure();
+  const details = useDisclosure();
 
   const debouncedIn = useDebounce(inputAmount, 400);
   const debouncedOut = useDebounce(outputAmount, 400);
@@ -106,6 +109,23 @@ export function SwapComponent() {
     }
   }, [allowance.data, inputAmount, inputToken]);
 
+  // Derived price display
+  const priceText = useMemo(() => {
+    if (!inputToken || !outputToken) return "-";
+    const inAmt = Number(inputAmount || "0");
+    const outAmt = Number(outputAmount || "0");
+    if (inAmt > 0 && outAmt > 0) {
+      const rate = outAmt / inAmt;
+      return `1 ${inputToken.symbol} ≈ ${rate.toFixed(6)} ${outputToken.symbol}`;
+    }
+    return "-";
+  }, [inputAmount, outputAmount, inputToken, outputToken]);
+
+  function computeAmountOutMin(calculatedOut: bigint, slippagePct: number): bigint {
+    const slippage = BigInt(Math.floor((Number(calculatedOut) * slippagePct) / 100));
+    return calculatedOut - slippage;
+  }
+
   async function onApprove() {
     if (!inputToken) return;
     setTxStatus("approving");
@@ -128,11 +148,17 @@ export function SwapComponent() {
     setTxStatus("swapping");
     try {
       const amountIn = BigInt(Math.floor(Number(inputAmount) * 10 ** (inputToken.decimals || 18)));
+      // Compute min out with slippage if we have a quote
+      let minOut = 0n;
+      if (amountsOut.data) {
+        const outBig = (amountsOut.data as unknown as bigint[]).slice(-1)[0];
+        minOut = computeAmountOutMin(outBig, slippageTolerance);
+      }
       const hash = await writeContractAsync({
         address: router,
         abi: routerAbi.abi as Abi,
         functionName: "swapExactTokensForTokens",
-        args: [amountIn, 0n, path, account.address!, BigInt(Math.floor(Date.now() / 1000) + 1800)],
+        args: [amountIn, minOut, path, account.address!, BigInt(Math.floor(Date.now() / 1000) + 1800)],
       });
       setTxHash(hash as `0x${string}`);
       setTxStatus("success");
@@ -157,20 +183,22 @@ export function SwapComponent() {
   }
 
   return (
-    <Box maxW="480px" w="100%" borderWidth="1px" borderColor="panelBorder" rounded="lg" p={5} bg="panelBg" backdropFilter="blur(2px)">
+    <Box maxW="520px" w="100%" borderWidth="1px" borderColor="panelBorder" rounded="xl" p={5} bg="panelBg" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
-        <Heading size="md">Swap</Heading>
-
-        <Flex direction="column" align="stretch" gap={2}>
-          <Text fontSize="sm" color="gray.600">From</Text>
-          <HStack>
-            <Button onClick={() => setSelecting("in")} variant="outline">
-              {inputToken?.symbol ?? "Select"}
-            </Button>
-            <Input type="number" placeholder="0.0" value={inputAmount} onChange={(e) => { setInputAmount(e.target.value); setOutputAmount(""); }} />
-          </HStack>
-          {inputToken && <Balance tokenAddress={inputToken.address} />}
+        <Flex justify="space-between" align="center">
+          <Heading size="md">Swap</Heading>
+          <IconButton aria-label="settings" variant="ghost" onClick={settings.onOpen}>
+            ⚙️
+          </IconButton>
         </Flex>
+
+        <TokenInput
+          label="From"
+          token={inputToken}
+          amount={inputAmount}
+          onAmountChange={(v) => { setInputAmount(v); setOutputAmount(""); }}
+          onTokenSelect={() => setSelecting("in")}
+        />
 
         <HStack justify="center">
           <IconButton aria-label="invert" variant="ghost" colorScheme="brand" icon={<FiArrowUpDown />} onClick={() => {
@@ -179,20 +207,32 @@ export function SwapComponent() {
           }} />
         </HStack>
 
-        <Flex direction="column" align="stretch" gap={2}>
-          <Text fontSize="sm" color="gray.600">To</Text>
-          <HStack>
-            <Button onClick={() => setSelecting("out")} variant="outline">
-              {outputToken?.symbol ?? "Select"}
-            </Button>
-            <Input type="number" placeholder="0.0" value={outputAmount} onChange={(e) => { setOutputAmount(e.target.value); setInputAmount(""); }} />
-          </HStack>
-          {outputToken && <Balance tokenAddress={outputToken.address} />}
-        </Flex>
+        <TokenInput
+          label="To"
+          token={outputToken}
+          amount={outputAmount}
+          onAmountChange={(v) => { setOutputAmount(v); setInputAmount(""); }}
+          onTokenSelect={() => setSelecting("out")}
+        />
 
         <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
           {actionLabel}
         </Button>
+
+        <Box>
+          <Button variant="link" size="sm" onClick={details.onToggle}>
+            {details.isOpen ? "Hide details" : "Show details"}
+          </Button>
+          <Collapse in={details.isOpen} animateOpacity>
+            <Box mt={2} fontSize="sm" color="gray.400">
+              <Text>Price: {priceText}</Text>
+              <Text>Slippage tolerance: {slippageTolerance}%</Text>
+              {path.length > 1 && (
+                <Text>Route: {path.map((p, i) => (i === 0 ? p : ` → ${p}`))}</Text>
+              )}
+            </Box>
+          </Collapse>
+        </Box>
       </Flex>
 
       <TokenSelectModal
@@ -200,6 +240,41 @@ export function SwapComponent() {
         onClose={() => setSelecting(null)}
         onTokenSelect={(t) => (selecting === "in" ? setInputToken(t) : setOutputToken(t))}
       />
+
+      {/* Settings Modal */}
+      <ModalRoot open={settings.isOpen} onClose={settings.onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Swap Settings</ModalHeader>
+          <ModalBody>
+            <Flex direction="column" gap={3}>
+              <Text fontSize="sm" color="gray.400">Slippage tolerance</Text>
+              <HStack>
+                {[0.1, 0.5, 1.0].map((v) => (
+                  <Button key={v} variant={slippageTolerance === v ? "solid" : "outline"} colorScheme="brand" size="sm" onClick={() => setSlippageTolerance(v)}>
+                    {v}%
+                  </Button>
+                ))}
+              </HStack>
+              <Flex align="center" gap={2}>
+                <Text fontSize="sm">Custom:</Text>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={slippageTolerance}
+                  onChange={(e) => setSlippageTolerance(Number(e.target.value))}
+                  style={{ width: 100, background: "transparent", border: "1px solid", borderColor: "rgba(255,255,255,0.2)", padding: "6px 8px", borderRadius: 6 }}
+                />
+                <Text>%</Text>
+              </Flex>
+            </Flex>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={settings.onClose}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </ModalRoot>
     </Box>
   );
 }
