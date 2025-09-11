@@ -17,7 +17,7 @@ export function AddLiquidityComponent() {
   const canSubmit = Boolean(tokenA && tokenB && amountA && amountB);
 
   return (
-    <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg" backdropFilter="blur(2px)">
+    <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" backdropFilter="blur(8px)" boxShadow="card">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="lg" mb={1} fontWeight="semibold">Add Liquidity</Heading>
 

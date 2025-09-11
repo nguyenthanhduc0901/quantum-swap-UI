@@ -29,10 +29,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>        
         <Providers>
-          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+          <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "linear-gradient(180deg, #0b1020 0%, #05070f 100%)" }}>
             <Navbar />
-            <main style={{ flex: 1 }}>
-              {children}
+            <main style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+              <div style={{ width: "100%", maxWidth: 1100, padding: "24px", background: "var(--chakra-colors-workspaceBg)" }}>
+                {children}
+              </div>
             </main>
             <Footer />
           </div>
