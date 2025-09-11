@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Box, Heading, HStack, Text, VStack, SimpleGrid } from "@chakra-ui/react";
-import { generateMockLineData } from "@/src/lib/mockChartData";
+import { generateMockLineData } from "@/lib/mockChartData";
 
 const TokenChart = dynamic(() => import("./ui/TokenChart").then((m) => m.TokenChart), {
   ssr: false,
