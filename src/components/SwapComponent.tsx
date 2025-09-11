@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Flex, HStack, Heading, Button, Text, IconButton, Collapse, useDisclosure, ModalRoot, ModalBody, ModalHeader, ModalFooter, ModalContent, ModalOverlay } from "@chakra-ui/react";
+import { Box, Flex, HStack, Heading, Button, Text, IconButton } from "@chakra-ui/react";
 import { FiArrowUpDown } from "react-icons/fi";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
@@ -39,8 +39,8 @@ export function SwapComponent() {
   >("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [slippageTolerance, setSlippageTolerance] = useState<number>(0.5);
-  const settings = useDisclosure();
-  const details = useDisclosure();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const debouncedIn = useDebounce(inputAmount, 400);
   const debouncedOut = useDebounce(outputAmount, 400);
@@ -187,7 +187,7 @@ export function SwapComponent() {
       <Flex direction="column" align="stretch" gap={4}>
         <Flex justify="space-between" align="center">
           <Heading size="md">Swap</Heading>
-          <IconButton aria-label="settings" variant="ghost" onClick={settings.onOpen}>
+          <IconButton aria-label="settings" variant="ghost" onClick={() => setSettingsOpen(true)}>
             ⚙️
           </IconButton>
         </Flex>
@@ -220,10 +220,10 @@ export function SwapComponent() {
         </Button>
 
         <Box>
-          <Button variant="link" size="sm" onClick={details.onToggle}>
-            {details.isOpen ? "Hide details" : "Show details"}
+          <Button variant="link" size="sm" onClick={() => setDetailsOpen((v) => !v)}>
+            {detailsOpen ? "Hide details" : "Show details"}
           </Button>
-          <Collapse in={details.isOpen} animateOpacity>
+          {detailsOpen && (
             <Box mt={2} fontSize="sm" color="gray.400">
               <Text>Price: {priceText}</Text>
               <Text>Slippage tolerance: {slippageTolerance}%</Text>
@@ -231,7 +231,7 @@ export function SwapComponent() {
                 <Text>Route: {path.map((p, i) => (i === 0 ? p : ` → ${p}`))}</Text>
               )}
             </Box>
-          </Collapse>
+          )}
         </Box>
       </Flex>
 
@@ -241,12 +241,23 @@ export function SwapComponent() {
         onTokenSelect={(t) => (selecting === "in" ? setInputToken(t) : setOutputToken(t))}
       />
 
-      {/* Settings Modal */}
-      <ModalRoot open={settings.isOpen} onClose={settings.onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Swap Settings</ModalHeader>
-          <ModalBody>
+      {/* Settings Overlay */}
+      {settingsOpen && (
+        <Box position="fixed" inset={0} bg="blackAlpha.600" zIndex={1000} onClick={() => setSettingsOpen(false)}>
+          <Box
+            onClick={(e) => e.stopPropagation()}
+            bg="panelBg"
+            borderWidth="1px"
+            borderColor="panelBorder"
+            rounded="lg"
+            shadow="lg"
+            w="full"
+            maxW="420px"
+            mx="auto"
+            mt="15vh"
+            p={4}
+          >
+            <Heading size="sm" mb={3}>Swap Settings</Heading>
             <Flex direction="column" gap={3}>
               <Text fontSize="sm" color="gray.400">Slippage tolerance</Text>
               <HStack>
@@ -268,13 +279,13 @@ export function SwapComponent() {
                 />
                 <Text>%</Text>
               </Flex>
+              <Flex justify="flex-end" pt={2}>
+                <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+              </Flex>
             </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={settings.onClose}>Close</Button>
-          </ModalFooter>
-        </ModalContent>
-      </ModalRoot>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
