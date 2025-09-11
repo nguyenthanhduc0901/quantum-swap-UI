@@ -19,13 +19,13 @@ export function AddLiquidityComponent() {
   return (
     <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
-        <Heading size="md">Add Liquidity</Heading>
+        <Heading size="lg" mb={1} fontWeight="semibold">Add Liquidity</Heading>
 
         <Flex direction="column" gap={2}>
           <Text fontSize="sm" color="gray.600">Token A</Text>
           <HStack>
             <Button variant="outline" onClick={() => setSelecting("A")}>{tokenA?.symbol ?? "Select"}</Button>
-            <Input type="number" placeholder="0.0" value={amountA} onChange={(e) => setAmountA(e.target.value)} />
+            <Input type="number" placeholder="0.0" value={amountA} onChange={(e) => setAmountA(e.target.value)} focusBorderColor="brand.500" />
           </HStack>
         </Flex>
 
@@ -33,11 +33,11 @@ export function AddLiquidityComponent() {
           <Text fontSize="sm" color="gray.600">Token B</Text>
           <HStack>
             <Button variant="outline" onClick={() => setSelecting("B")}>{tokenB?.symbol ?? "Select"}</Button>
-            <Input type="number" placeholder="0.0" value={amountB} onChange={(e) => setAmountB(e.target.value)} />
+            <Input type="number" placeholder="0.0" value={amountB} onChange={(e) => setAmountB(e.target.value)} focusBorderColor="brand.500" />
           </HStack>
         </Flex>
 
-        <Button colorScheme="brand" disabled={!canSubmit}>Add Liquidity</Button>
+        <Button colorScheme="brand" disabled={!canSubmit} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Add Liquidity</Button>
       </Flex>
 
       <TokenSelectModal

@@ -16,7 +16,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
   return (
     <Flex direction="column" gap={2}>
       <Flex justify="space-between" align="center">
-        <Text fontSize="sm" color="gray.400">{label}</Text>
+        <Text fontSize="sm" color="gray.400" fontWeight="medium">{label}</Text>
         {token && (
           <Balance tokenAddress={token.address} />
         )}
@@ -24,7 +24,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
 
       <Box borderWidth="1px" borderColor="panelBorder" bg="transparent" rounded="lg" px={3} py={2}>
         <Flex align="center" gap={3}>
-          <Button onClick={onTokenSelect} variant="outline" colorScheme="brand">
+          <Button onClick={onTokenSelect} variant="outline" colorScheme="brand" _hover={{ bg: "whiteAlpha.200" }}>
             <Flex align="center" gap={2}>
               {token?.logoURI ? (
                 <Image src={token.logoURI} alt={token.symbol} boxSize="20px" rounded="full" />
@@ -42,6 +42,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
               inputMode="decimal"
               type="number"
               variant="outline"
+              focusBorderColor="brand.500"
               fontSize="2xl"
               textAlign="right"
             />

@@ -43,7 +43,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
           <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} />
           <Flex direction="column" align="stretch" gap={1} maxH="320px" overflowY="auto">
             {filtered.map((t) => (
-              <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start">
+              <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start" _hover={{ bg: "whiteAlpha.200" }}>
                 <HStack gap={3}>
                   {t.logoURI ? <Image src={t.logoURI} alt={t.symbol} boxSize="20px" /> : <Box boxSize="20px" bg="gray.200" rounded="full" />}
                   <Text fontWeight="semibold">{t.symbol}</Text>

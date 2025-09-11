@@ -186,7 +186,7 @@ export function SwapComponent() {
     <Box maxW="520px" w="100%" borderWidth="1px" borderColor="panelBorder" rounded="xl" p={5} bg="panelBg" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
         <Flex justify="space-between" align="center">
-          <Heading size="md">Swap</Heading>
+          <Heading size="lg" mb={1} fontWeight="semibold">Swap</Heading>
           <IconButton aria-label="settings" variant="ghost" onClick={() => setSettingsOpen(true)}>
             ⚙️
           </IconButton>
@@ -221,7 +221,7 @@ export function SwapComponent() {
           onTokenSelect={() => setSelecting("out")}
         />
 
-        <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
+        <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"} disabled={!inputToken || !outputToken || !inputAmount} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>
           {actionLabel}
         </Button>
         <Box>

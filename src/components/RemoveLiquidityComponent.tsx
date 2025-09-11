@@ -103,8 +103,8 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
   return (
     <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg">
       <Flex direction="column" align="stretch" gap={4}>
-        <Heading size="md">Remove Liquidity</Heading>
-        <Text color="gray.600">Pair: {pairAddress}</Text>
+        <Heading size="lg" mb={1} fontWeight="semibold">Remove Liquidity</Heading>
+        <Text color="gray.400">Pair: {pairAddress}</Text>
         <Box borderTopWidth="1px" borderColor="panelBorder" />
 
         <Text fontSize="sm" color="gray.600">Select percentage</Text>
@@ -134,14 +134,14 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
           <Text>Token1: {amount1ToReceive.toString()}</Text>
         </Flex>
 
-        <Text color="gray.600" fontSize="sm">Price: 1 token0 = {(reserve1 && reserve0) ? (Number(reserve1) / Math.max(Number(reserve0), 1)).toFixed(6) : "-"} token1</Text>
+        <Text color="gray.400" fontSize="sm">Price: 1 token0 = {(reserve1 && reserve0) ? (Number(reserve1) / Math.max(Number(reserve0), 1)).toFixed(6) : "-"} token1</Text>
 
         <HStack justify="space-between" pt={2}>
           <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
           {needsApproval ? (
-            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n}>Approve</Button>
+            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Approve</Button>
           ) : (
-            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n}>Remove</Button>
+            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Remove</Button>
           )}
         </HStack>
       </Flex>

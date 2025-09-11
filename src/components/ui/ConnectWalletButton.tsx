@@ -31,7 +31,7 @@ export function ConnectWalletButton() {
 
     return (
       <Box position="relative">
-        <Button onClick={() => setOpen((v) => !v)} variant="solid" colorScheme="brand">
+        <Button onClick={() => setOpen((v) => !v)} variant="outline" colorScheme="brand" _hover={{ bg: "whiteAlpha.200" }}>
           <HStack gap={2}>
             <Box as="span" px={2} py={1} rounded="md" bg="whiteAlpha.200" color="fg" fontSize="xs">
               {chainName}
