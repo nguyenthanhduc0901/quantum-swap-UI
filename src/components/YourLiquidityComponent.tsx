@@ -30,8 +30,8 @@ export function YourLiquidityComponent() {
 
   if (positions.length === 0) {
     return (
-      <Box borderWidth="1px" borderColor="gray.200" rounded="lg" p={6} bg="white">
-        <Text color="gray.600">Your active liquidity positions will appear here.</Text>
+      <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
+        <Text color="gray.500">Your active liquidity positions will appear here.</Text>
       </Box>
     );
   }

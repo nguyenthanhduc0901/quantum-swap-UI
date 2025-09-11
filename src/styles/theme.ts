@@ -44,4 +44,3 @@ export const system = createSystem(defaultConfig, {
 
 export default system;
 
-
