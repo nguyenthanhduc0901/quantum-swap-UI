@@ -157,7 +157,7 @@ export function SwapComponent() {
   }
 
   return (
-    <Box maxW="480px" w="100%" borderWidth="1px" borderColor="whiteAlpha.200" rounded="lg" p={5} bg="whiteAlpha.100" backdropFilter="blur(2px)">
+    <Box maxW="480px" w="100%" borderWidth="1px" borderColor="panelBorder" rounded="lg" p={5} bg="panelBg" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Swap</Heading>
 

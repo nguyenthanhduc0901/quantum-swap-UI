@@ -2,7 +2,7 @@
 
 import { ReactNode, useState } from "react";
 import { ChakraProvider } from "@chakra-ui/react";
-import theme from "../styles/theme";
+import system from "../styles/theme";
 import { ToastProvider } from "../contexts/ToastContext";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { injected } from "@wagmi/connectors";
@@ -26,7 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <ChakraProvider theme={theme}>
+    <ChakraProvider value={system}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>{children}</ToastProvider>

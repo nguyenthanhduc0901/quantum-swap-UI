@@ -6,7 +6,7 @@ import { ConnectWalletButton } from "../ui/ConnectWalletButton";
 
 export function Navbar() {
   return (
-    <Box as="nav" bg="whiteAlpha.50" borderBottom="1px" borderColor="whiteAlpha.200" py={3} color="whiteAlpha.900" backdropFilter="blur(6px)">
+    <Box as="nav" bg="whiteAlpha.50" borderBottom="1px" borderColor="panelBorder" py={3} color="fg" backdropFilter="blur(6px)">
       <Container maxW="container.xl">
         <Flex align="center" justify="space-between" gap={4}>
           <Flex align="center" gap={3}>
@@ -16,10 +16,10 @@ export function Navbar() {
           </Flex>
 
           <Flex align="center" gap={6} display={{ base: "none", md: "flex" }}>
-            <ChakraLink as={NextLink} href="/swap" color="whiteAlpha.900" _hover={{ color: "brand.300" }}>
+            <ChakraLink as={NextLink} href="/swap" color="fg" _hover={{ color: "brand.300" }}>
               Swap
             </ChakraLink>
-            <ChakraLink as={NextLink} href="/pool" color="whiteAlpha.900" _hover={{ color: "brand.300" }}>
+            <ChakraLink as={NextLink} href="/pool" color="fg" _hover={{ color: "brand.300" }}>
               Pool
             </ChakraLink>
           </Flex>
