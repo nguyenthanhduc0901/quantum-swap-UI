@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Flex, HStack, Heading, Button, Input, Text, IconButton } from "@chakra-ui/react";
-import { FaArrowsAltV } from "react-icons/fa";
+import { FiArrowUpDown } from "react-icons/fi";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
@@ -173,7 +173,7 @@ export function SwapComponent() {
         </Flex>
 
         <HStack justify="center">
-          <IconButton aria-label="invert" variant="ghost" colorScheme="brand" icon={<FaArrowsAltV />} onClick={() => {
+          <IconButton aria-label="invert" variant="ghost" colorScheme="brand" icon={<FiArrowUpDown />} onClick={() => {
             const a = inputToken; const b = outputToken; setInputToken(b); setOutputToken(a);
             const ai = inputAmount; const ao = outputAmount; setInputAmount(ao); setOutputAmount(ai);
           }} />
