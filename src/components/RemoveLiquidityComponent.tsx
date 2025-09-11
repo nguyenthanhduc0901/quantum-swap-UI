@@ -139,9 +139,9 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
         <HStack justify="space-between" pt={2}>
           <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
           {needsApproval ? (
-            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Approve</Button>
+            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Approve</Button>
           ) : (
-            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Remove</Button>
+            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Remove</Button>
           )}
         </HStack>
       </Flex>

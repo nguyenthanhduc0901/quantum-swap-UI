@@ -10,7 +10,7 @@ export function Navbar() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <Box as="nav" bg="whiteAlpha.50" borderBottom="1px" borderColor="panelBorder" py={3} color="fg" backdropFilter="blur(6px)">
+    <Box as="nav" bg="white" borderBottom="1px" borderColor="cardBorder" py={3} color="fg">
       <Container maxW="container.xl">
         <Flex align="center" justify="space-between" gap={4}>
           <Flex align="center" gap={3}>
@@ -26,9 +26,9 @@ export function Navbar() {
               px={3}
               py={1}
               rounded="md"
-              bg={isActive("/swap") ? "whiteAlpha.100" : "transparent"}
-              color={isActive("/swap") ? "brand.300" : "fg"}
-              _hover={{ color: "brand.300", bg: "whiteAlpha.100" }}
+              bg={isActive("/swap") ? "gray.100" : "transparent"}
+              color={isActive("/swap") ? "brand.600" : "fg"}
+              _hover={{ color: "brand.600", bg: "gray.100" }}
             >
               Swap
             </ChakraLink>
@@ -38,9 +38,9 @@ export function Navbar() {
               px={3}
               py={1}
               rounded="md"
-              bg={isActive("/pool") ? "whiteAlpha.100" : "transparent"}
-              color={isActive("/pool") ? "brand.300" : "fg"}
-              _hover={{ color: "brand.300", bg: "whiteAlpha.100" }}
+              bg={isActive("/pool") ? "gray.100" : "transparent"}
+              color={isActive("/pool") ? "brand.600" : "fg"}
+              _hover={{ color: "brand.600", bg: "gray.100" }}
             >
               Pool
             </ChakraLink>

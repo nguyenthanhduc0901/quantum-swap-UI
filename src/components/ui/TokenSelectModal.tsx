@@ -27,9 +27,11 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
     <Box position="fixed" inset={0} bg="blackAlpha.600" zIndex={1000} onClick={onClose}>
       <Box
         onClick={(e) => e.stopPropagation()}
-        bg="white"
-        rounded="lg"
-        shadow="lg"
+        bg="cardBg"
+        borderWidth="1px"
+        borderColor="cardBorder"
+        rounded="xl"
+        boxShadow="card"
         w="full"
         maxW="420px"
         mx="auto"
@@ -40,7 +42,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
           Select a token
         </Text>
         <Flex direction="column" align="stretch" gap={3} pb={2}>
-          <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <Input placeholder="Search name or symbol" value={query} onChange={(e) => setQuery(e.target.value)} focusBorderColor="brand.500" />
           <Flex direction="column" align="stretch" gap={1} maxH="320px" overflowY="auto">
             {filtered.map((t) => (
               <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start" _hover={{ bg: "whiteAlpha.200" }}>
@@ -53,7 +55,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
             ))}
           </Flex>
         </Flex>
-        <Button onClick={onClose} mt={2} w="full">Close</Button>
+        <Button onClick={onClose} mt={2} w="full" variant="outline" colorScheme="brand">Close</Button>
       </Box>
     </Box>
   );

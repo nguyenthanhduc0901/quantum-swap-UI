@@ -221,7 +221,7 @@ export function SwapComponent() {
           onTokenSelect={() => setSelecting("out")}
         />
 
-        <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"} disabled={!inputToken || !outputToken || !inputAmount} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>
+        <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"} disabled={!inputToken || !outputToken || !inputAmount} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">
           {actionLabel}
         </Button>
         <Box>

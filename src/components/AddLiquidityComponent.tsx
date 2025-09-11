@@ -37,7 +37,7 @@ export function AddLiquidityComponent() {
           </HStack>
         </Flex>
 
-        <Button colorScheme="brand" disabled={!canSubmit} _disabled={{ opacity: 0.6, cursor: "not-allowed" }}>Add Liquidity</Button>
+        <Button colorScheme="brand" disabled={!canSubmit} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Add Liquidity</Button>
       </Flex>
 
       <TokenSelectModal
