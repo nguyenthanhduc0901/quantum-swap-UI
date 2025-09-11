@@ -183,7 +183,7 @@ export function SwapComponent() {
   }
 
   return (
-    <Box maxW="520px" w="100%" borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" backdropFilter="blur(8px)" boxShadow="card">
+    <Box maxW="520px" w="100%" borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
       <Flex direction="column" align="stretch" gap={4}>
         <Flex justify="space-between" align="center">
           <Heading size="lg" mb={1} fontWeight="semibold">Swap</Heading>

@@ -101,7 +101,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
   }
 
   return (
-    <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" backdropFilter="blur(8px)" boxShadow="card">
+    <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="lg" mb={1} fontWeight="semibold">Remove Liquidity</Heading>
         <Text color="gray.400">Pair: {pairAddress}</Text>

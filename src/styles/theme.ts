@@ -22,23 +22,23 @@ export const system = createSystem(defaultConfig, {
         card: { value: "16px" },
       },
       shadows: {
-        card: { value: "0 8px 24px rgba(0, 0, 0, 0.35)" },
+        card: { value: "0 6px 20px rgba(17, 24, 39, 0.06)" },
       },
     },
     semanticTokens: {
       colors: {
-        bg: { value: { _light: "gray.50", _dark: "#0b1020" } },
-        fg: { value: { _light: "gray.900", _dark: "whiteAlpha.900" } },
-        workspaceBg: { value: { _light: "gray.50", _dark: "rgba(255,255,255,0.02)" } },
-        cardBg: { value: { _light: "white", _dark: "rgba(255,255,255,0.06)" } },
+        bg: { value: { _light: "#F7F8FA", _dark: "#0b1020" } },
+        fg: { value: { _light: "#1A202C", _dark: "whiteAlpha.900" } },
+        workspaceBg: { value: { _light: "transparent", _dark: "rgba(255,255,255,0.02)" } },
+        cardBg: { value: { _light: "#FFFFFF", _dark: "rgba(255,255,255,0.06)" } },
         cardBorder: { value: { _light: "gray.200", _dark: "whiteAlpha.200" } },
-        panelBg: { value: { _light: "white", _dark: "rgba(255,255,255,0.06)" } },
+        panelBg: { value: { _light: "#FFFFFF", _dark: "rgba(255,255,255,0.06)" } },
         panelBorder: { value: { _light: "gray.200", _dark: "whiteAlpha.200" } },
       },
     },
   },
   config: {
-    initialColorMode: "dark"
+    initialColorMode: "light"
   }
 });
 
