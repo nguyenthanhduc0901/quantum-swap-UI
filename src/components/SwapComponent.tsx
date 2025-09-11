@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Flex, HStack, Heading, Button, Text, IconButton } from "@chakra-ui/react";
-import { FiArrowUpDown } from "react-icons/fi";
+import { FiArrowDown } from "react-icons/fi";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
@@ -199,12 +199,18 @@ export function SwapComponent() {
           onAmountChange={(v) => { setInputAmount(v); setOutputAmount(""); }}
           onTokenSelect={() => setSelecting("in")}
         />
-
         <HStack justify="center">
-          <IconButton aria-label="invert" variant="ghost" colorScheme="brand" icon={<FiArrowUpDown />} onClick={() => {
-            const a = inputToken; const b = outputToken; setInputToken(b); setOutputToken(a);
-            const ai = inputAmount; const ao = outputAmount; setInputAmount(ao); setOutputAmount(ai);
-          }} />
+          <IconButton 
+            aria-label="invert" 
+            variant="ghost" 
+            colorScheme="brand"
+            onClick={() => {
+              const a = inputToken; const b = outputToken; setInputToken(b); setOutputToken(a);
+              const ai = inputAmount; const ao = outputAmount; setInputAmount(ao); setOutputAmount(ai);
+            }}
+          >
+            <FiArrowDown />
+          </IconButton>
         </HStack>
 
         <TokenInput
@@ -218,14 +224,12 @@ export function SwapComponent() {
         <Button colorScheme="brand" onClick={onAction} loading={txStatus === "approving" || txStatus === "swapping"}>
           {actionLabel}
         </Button>
-
         <Box>
-          <Button variant="link" size="sm" onClick={() => setDetailsOpen((v) => !v)}>
-            {detailsOpen ? "Hide details" : "Show details"}
+          <Button variant="ghost" colorScheme="brand" size="sm" onClick={() => setDetailsOpen((v) => !v)}>
+            {detailsOpen ? "Hide details ↑" : "Show details ↓"}
           </Button>
           {detailsOpen && (
             <Box mt={2} fontSize="sm" color="gray.400">
-              <Text>Price: {priceText}</Text>
               <Text>Slippage tolerance: {slippageTolerance}%</Text>
               {path.length > 1 && (
                 <Text>Route: {path.map((p, i) => (i === 0 ? p : ` → ${p}`))}</Text>

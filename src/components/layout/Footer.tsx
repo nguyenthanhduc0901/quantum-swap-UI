@@ -10,17 +10,17 @@ export function Footer() {
         <Flex align="center" justify="space-between" gap={4} direction={{ base: "column", md: "row" }}>
           <Text fontSize="sm" color="gray.400">This is a portfolio project. Use at your own risk.</Text>
           <HStack gap={2}>
-            <ChakraLink href="https://github.com/your-org/quantumswap" isExternal>
+            <ChakraLink as="a" href="https://github.com/your-org/quantumswap" target="_blank" rel="noopener noreferrer">
               <IconButton aria-label="GitHub" variant="ghost" colorScheme="brand">
                 <FaGithub />
               </IconButton>
             </ChakraLink>
-            <ChakraLink href="https://www.linkedin.com/in/your-profile" isExternal>
+            <ChakraLink href="https://www.linkedin.com/in/your-profile" target="_blank" rel="noopener noreferrer">
               <IconButton aria-label="LinkedIn" variant="ghost" colorScheme="brand">
                 <FaLinkedin />
               </IconButton>
             </ChakraLink>
-            <ChakraLink href="https://twitter.com/your-handle" isExternal>
+            <ChakraLink href="https://twitter.com/your-handle" target="_blank" rel="noopener noreferrer">
               <IconButton aria-label="Twitter" variant="ghost" colorScheme="brand">
                 <FaTwitter />
               </IconButton>

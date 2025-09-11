@@ -31,13 +31,15 @@ export function ConnectWalletButton() {
 
     return (
       <Box position="relative">
-        <HStack as={Button} onClick={() => setOpen((v) => !v)} variant="solid" colorScheme="brand" gap={2}>
-          <Box as="span" px={2} py={1} rounded="md" bg="whiteAlpha.200" color="fg" fontSize="xs">
-            {chainName}
-          </Box>
-          <Text>{bal} {nativeBalance?.symbol ?? "ETH"}</Text>
+        <Button onClick={() => setOpen((v) => !v)} variant="solid" colorScheme="brand">
+          <HStack gap={2}>
+            <Box as="span" px={2} py={1} rounded="md" bg="whiteAlpha.200" color="fg" fontSize="xs">
+              {chainName}
+            </Box>
+            <Text>{bal} {nativeBalance?.symbol ?? "ETH"}</Text>
           <Text fontWeight="semibold">{label}</Text>
         </HStack>
+        </Button>
         {open && (
           <Box position="absolute" right={0} mt={2} bg="panelBg" borderWidth="1px" borderColor="panelBorder" rounded="md" shadow="md" w="280px" p={3} zIndex={10}>
             <Flex direction="column" align="stretch" gap={2}>

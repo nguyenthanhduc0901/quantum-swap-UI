@@ -28,8 +28,8 @@ export const system = createSystem(defaultConfig, {
     },
   },
   config: {
-    initialColorMode: "dark",
-  },
+    initialColorMode: "dark"
+  }
 });
 
 export default system;

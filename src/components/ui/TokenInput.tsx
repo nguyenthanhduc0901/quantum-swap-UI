@@ -18,7 +18,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
       <Flex justify="space-between" align="center">
         <Text fontSize="sm" color="gray.400">{label}</Text>
         {token && (
-          <Balance tokenAddress={token.address} symbol={token.symbol} />
+          <Balance tokenAddress={token.address} />
         )}
       </Flex>
 
@@ -41,7 +41,7 @@ export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect
               placeholder="0.0"
               inputMode="decimal"
               type="number"
-              variant="unstyled"
+              variant="outline"
               fontSize="2xl"
               textAlign="right"
             />
