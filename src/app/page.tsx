@@ -103,6 +103,7 @@ export default function Home() {
             </MotionBox>
           </Box>
         </Flex>
+        </Flex>
       </Container>
 
       {/* Section 2: Why Choose QuantumSwap? */}
