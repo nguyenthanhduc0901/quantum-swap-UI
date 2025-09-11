@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, Flex, Text, HStack, Tag } from "@chakra-ui/react";
+import { Box, Button, Flex, Text, HStack } from "@chakra-ui/react";
 import { useAccount, useBalance, useConnect, useDisconnect, useEnsName } from "wagmi";
 
 function truncateAddress(addr?: string) {
@@ -32,7 +32,9 @@ export function ConnectWalletButton() {
     return (
       <Box position="relative">
         <HStack as={Button} onClick={() => setOpen((v) => !v)} variant="solid" colorScheme="brand" gap={2}>
-          <Tag bg="whiteAlpha.200" color="fg">{chainName}</Tag>
+          <Box as="span" px={2} py={1} rounded="md" bg="whiteAlpha.200" color="fg" fontSize="xs">
+            {chainName}
+          </Box>
           <Text>{bal} {nativeBalance?.symbol ?? "ETH"}</Text>
           <Text fontWeight="semibold">{label}</Text>
         </HStack>
