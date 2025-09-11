@@ -17,7 +17,7 @@ export function AddLiquidityComponent() {
   const canSubmit = Boolean(tokenA && tokenB && amountA && amountB);
 
   return (
-    <Box borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
+    <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg" backdropFilter="blur(2px)">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Add Liquidity</Heading>
 
@@ -37,7 +37,7 @@ export function AddLiquidityComponent() {
           </HStack>
         </Flex>
 
-        <Button colorScheme="teal" disabled={!canSubmit}>Add Liquidity</Button>
+        <Button colorScheme="brand" disabled={!canSubmit}>Add Liquidity</Button>
       </Flex>
 
       <TokenSelectModal

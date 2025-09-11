@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink, Skeleton } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink, Spinner, Skeleton } from "@chakra-ui/react";
 import type { Abi } from "viem";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useTransactionStatus } from "../hooks/useTransactionStatus";
@@ -87,16 +87,25 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
     }
   }
 
-  const loadingData = token0 === null || token1 === null || totalSupply === 0n;
+  const isLoadingData = balRead.isLoading || tsRead.isLoading || resRead.isLoading || t0Read.isLoading || t1Read.isLoading;
+  if (isLoadingData) {
+    return (
+      <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg">
+        <Skeleton height="200px" />
+        <Flex direction="column" align="center" mt={4}>
+          <Spinner size="lg" />
+          <Text mt={2}>Loading pool data...</Text>
+        </Flex>
+      </Box>
+    );
+  }
+
   return (
-    <Box maxW="560px" w="100%" borderWidth="1px" borderColor="gray.200" rounded="lg" p={5} bg="white">
-      {loadingData ? (
-        <Skeleton height="220px" />
-      ) : (
+    <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="md">Remove Liquidity</Heading>
         <Text color="gray.600">Pair: {pairAddress}</Text>
-        <Box borderTopWidth="1px" borderColor="gray.200" />
+        <Box borderTopWidth="1px" borderColor="panelBorder" />
 
         <Text fontSize="sm" color="gray.600">Select percentage</Text>
         <input
@@ -109,7 +118,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
           style={{ width: "100%" }}
         />
         <HStack justify="space-between">
-          <HStack>
+          <HStack gap={2}>
             <Button size="sm" onClick={() => setPercentageToRemove(25)}>25%</Button>
             <Button size="sm" onClick={() => setPercentageToRemove(50)}>50%</Button>
             <Button size="sm" onClick={() => setPercentageToRemove(75)}>75%</Button>
@@ -118,7 +127,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
           <Text>{percentageToRemove}%</Text>
         </HStack>
 
-        <Box borderTopWidth="1px" borderColor="gray.200" />
+        <Box borderTopWidth="1px" borderColor="panelBorder" />
         <Flex direction="column" align="stretch" gap={1}>
           <Text fontWeight="semibold">You will receive:</Text>
           <Text>Token0: {amount0ToReceive.toString()}</Text>
@@ -128,15 +137,14 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
         <Text color="gray.600" fontSize="sm">Price: 1 token0 = {(reserve1 && reserve0) ? (Number(reserve1) / Math.max(Number(reserve0), 1)).toFixed(6) : "-"} token1</Text>
 
         <HStack justify="space-between" pt={2}>
-          <ChakraLink as={NextLink} href="/pool" color="teal.600">Back to Pool</ChakraLink>
+          <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
           {needsApproval ? (
-            <Button colorScheme="teal" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n}>Approve</Button>
+            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n}>Approve</Button>
           ) : (
-            <Button colorScheme="teal" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n}>Remove</Button>
+            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n}>Remove</Button>
           )}
         </HStack>
       </Flex>
-      )}
     </Box>
   );
 }
