@@ -6,9 +6,9 @@ import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
 
 export default function PoolPage() {
   return (
-    <Container maxW="container.lg" py={12}>
-      <Flex direction="column" gap={8}>
-        <Heading size="lg">Pool</Heading>
+    <Container maxW="container.lg" py={10}>
+      <Flex direction="column" gap={8} align="center">
+        <Heading size="lg" w="full" maxW="520px">Pool</Heading>
         <AddLiquidityComponent />
         <YourLiquidityComponent />
       </Flex>
