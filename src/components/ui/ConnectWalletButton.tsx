@@ -30,7 +30,7 @@ export function ConnectWalletButton() {
     const bal = nativeBalance ? parseFloat(nativeBalance.formatted).toFixed(4) : "-";
 
     return (
-      <Box position="relative">
+      <Box position="relative" w={{ base: "200px", md: "360px" }}>
         <Button onClick={() => setOpen((v) => !v)} variant="outline" colorScheme="brand" _hover={{ bg: "gray.100" }} h={9} px={3}>
           <HStack gap={2} align="center">
             <Box as="span" px={2} h={5} display="inline-flex" alignItems="center" rounded="md" bg="gray.100" color="fg" fontSize="xs">
@@ -58,8 +58,8 @@ export function ConnectWalletButton() {
   }
 
   return (
-    <Box position="relative">
-      <Button colorScheme="brand" onClick={() => setOpen((v) => !v)} loading={isPending} h={9} px={3}>
+    <Box position="relative" w={{ base: "200px", md: "360px" }}>
+      <Button colorScheme="brand" onClick={() => setOpen((v) => !v)} loading={isPending} h={9} px={3} w="full">
         Connect Wallet
       </Button>
       {open && mounted && (

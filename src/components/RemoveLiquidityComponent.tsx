@@ -10,9 +10,9 @@ import routerAbi from "../constants/abi/QuantumSwapRouter.json";
 import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
 import NextLink from "next/link";
 
-type Props = { pairAddress: `0x${string}` };
+type Props = { pairAddress: `0x${string}`; onClose?: () => void };
 
-export function RemoveLiquidityComponent({ pairAddress }: Props) {
+export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const chainId = useChainId() ?? 31337;
   const { address: user } = useAccount();
   const { writeContractAsync } = useWriteContract();
@@ -26,6 +26,10 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
   const [reserve1, setReserve1] = useState<bigint>(0n);
   const [token0, setToken0] = useState<`0x${string}` | null>(null);
   const [token1, setToken1] = useState<`0x${string}` | null>(null);
+  const [decimals0, setDecimals0] = useState<number>(18);
+  const [decimals1, setDecimals1] = useState<number>(18);
+  const [symbol0, setSymbol0] = useState<string>("Token0");
+  const [symbol1, setSymbol1] = useState<string>("Token1");
   const [status, setStatus] = useState<"idle" | "approving" | "removing" | "success" | "error">("idle");
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const receipt = useWaitForTransactionReceipt({ hash: txHash, query: { enabled: Boolean(txHash) } });
@@ -51,9 +55,35 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
   useEffect(() => { if (t0Read.data) setToken0(t0Read.data as unknown as `0x${string}`); }, [t0Read.data]);
   useEffect(() => { if (t1Read.data) setToken1(t1Read.data as unknown as `0x${string}`); }, [t1Read.data]);
 
+  // Token metadata reads (use Pair ABI as ERC20 superset)
+  const dec0Read = useReadContract({ address: token0 ?? undefined, abi: pairAbi.abi as Abi, functionName: "decimals", args: token0 ? [] : undefined, query: { enabled: Boolean(token0) } });
+  const dec1Read = useReadContract({ address: token1 ?? undefined, abi: pairAbi.abi as Abi, functionName: "decimals", args: token1 ? [] : undefined, query: { enabled: Boolean(token1) } });
+  const sym0Read = useReadContract({ address: token0 ?? undefined, abi: pairAbi.abi as Abi, functionName: "symbol", args: token0 ? [] : undefined, query: { enabled: Boolean(token0) } });
+  const sym1Read = useReadContract({ address: token1 ?? undefined, abi: pairAbi.abi as Abi, functionName: "symbol", args: token1 ? [] : undefined, query: { enabled: Boolean(token1) } });
+
+  useEffect(() => { if (dec0Read.data) setDecimals0(Number(dec0Read.data as unknown as bigint)); }, [dec0Read.data]);
+  useEffect(() => { if (dec1Read.data) setDecimals1(Number(dec1Read.data as unknown as bigint)); }, [dec1Read.data]);
+  useEffect(() => { if (sym0Read.data) setSymbol0(sym0Read.data as unknown as string); }, [sym0Read.data]);
+  useEffect(() => { if (sym1Read.data) setSymbol1(sym1Read.data as unknown as string); }, [sym1Read.data]);
+
   const amountLpToBurn = useMemo(() => (lpTokenBalance * BigInt(Math.floor(percentageToRemove))) / 100n, [lpTokenBalance, percentageToRemove]);
   const amount0ToReceive = useMemo(() => (totalSupply > 0n ? (reserve0 * amountLpToBurn) / totalSupply : 0n), [reserve0, amountLpToBurn, totalSupply]);
   const amount1ToReceive = useMemo(() => (totalSupply > 0n ? (reserve1 * amountLpToBurn) / totalSupply : 0n), [reserve1, amountLpToBurn, totalSupply]);
+
+  function formatAmount(raw: bigint, decimals: number, maxFrac = 6): string {
+    try {
+      const divisor = 10 ** decimals;
+      return (Number(raw) / divisor).toLocaleString(undefined, { maximumFractionDigits: maxFrac });
+    } catch {
+      // Fallback for very large numbers
+      const s = raw.toString();
+      if (decimals === 0) return s;
+      const pad = decimals - s.length + 1;
+      const whole = pad > 0 ? "0" : s.slice(0, -decimals);
+      const frac = pad > 0 ? "0".repeat(pad) + s : s.slice(-decimals);
+      return `${whole}.${frac}`;
+    }
+  }
 
   const allowance = (allowanceRead.data as unknown as bigint) || 0n;
   const needsApproval = amountLpToBurn > 0n && allowance < amountLpToBurn;
@@ -87,7 +117,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
     }
   }
 
-  const isLoadingData = balRead.isLoading || tsRead.isLoading || resRead.isLoading || t0Read.isLoading || t1Read.isLoading;
+  const isLoadingData = balRead.isLoading || tsRead.isLoading || resRead.isLoading || t0Read.isLoading || t1Read.isLoading || dec0Read.isLoading || dec1Read.isLoading || sym0Read.isLoading || sym1Read.isLoading;
   if (isLoadingData) {
     return (
       <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg">
@@ -104,7 +134,7 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
     <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
       <Flex direction="column" align="stretch" gap={4}>
         <Heading size="lg" mb={1} fontWeight="semibold">Remove Liquidity</Heading>
-        <Text color="gray.400">Pair: {pairAddress}</Text>
+        <Text color="gray.400">Pair: {symbol0} / {symbol1}</Text>
         <Box borderTopWidth="1px" borderColor="panelBorder" />
 
         <Text fontSize="sm" color="gray.600">Select percentage</Text>
@@ -130,14 +160,28 @@ export function RemoveLiquidityComponent({ pairAddress }: Props) {
         <Box borderTopWidth="1px" borderColor="panelBorder" />
         <Flex direction="column" align="stretch" gap={1}>
           <Text fontWeight="semibold">You will receive:</Text>
-          <Text>Token0: {amount0ToReceive.toString()}</Text>
-          <Text>Token1: {amount1ToReceive.toString()}</Text>
+          <Text>{symbol0}: {formatAmount(amount0ToReceive, decimals0)}</Text>
+          <Text>{symbol1}: {formatAmount(amount1ToReceive, decimals1)}</Text>
         </Flex>
 
-        <Text color="gray.400" fontSize="sm">Price: 1 token0 = {(reserve1 && reserve0) ? (Number(reserve1) / Math.max(Number(reserve0), 1)).toFixed(6) : "-"} token1</Text>
+        <Text color="gray.400" fontSize="sm">Price: 1 {symbol0} = {reserve0 > 0n && reserve1 > 0n ? ( (Number(reserve1) / 10 ** decimals1) / Math.max(Number(reserve0) / 10 ** decimals0, 1e-18) ).toFixed(6) : "-"} {symbol1}</Text>
+
+        <Box borderTopWidth="1px" borderColor="panelBorder" />
+        <Flex justify="space-between">
+          <Text color="gray.500">Your LP balance</Text>
+          <Text fontWeight="semibold">{lpTokenBalance.toString()}</Text>
+        </Flex>
+        <Flex justify="space-between">
+          <Text color="gray.500">LP to remove</Text>
+          <Text fontWeight="semibold">{amountLpToBurn.toString()}</Text>
+        </Flex>
 
         <HStack justify="space-between" pt={2}>
-          <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
+          {onClose ? (
+            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+          ) : (
+            <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
+          )}
           {needsApproval ? (
             <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Approve</Button>
           ) : (

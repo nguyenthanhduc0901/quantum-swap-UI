@@ -12,14 +12,15 @@ export function Navbar() {
   return (
     <Box as="nav" bg="white" borderBottom="1px" borderColor="cardBorder" py={3} color="fg">
       <Container maxW="container.xl">
-        <Flex align="center" justify="space-between" gap={4}>
-          <Flex align="center" gap={3}>
+        <Flex align="center" gap={4}>
+          {/* Left spacer (same width as right) to center the middle nav */}
+          <Box w={{ base: "200px", md: "360px" }} display="flex" alignItems="center">
             <ChakraLink as={NextLink} href="/" _hover={{ textDecoration: "none" }}>
               <Heading size="md" color="brand.300">QuantumSwap</Heading>
             </ChakraLink>
-          </Flex>
+          </Box>
 
-          <Flex align="center" gap={2} display={{ base: "none", md: "flex" }}>
+          <Flex flex="1" align="center" justify="center" gap={2} display={{ base: "none", md: "flex" }}>
             <ChakraLink
               as={NextLink}
               href="/swap"
@@ -52,7 +53,9 @@ export function Navbar() {
             </ChakraLink>
           </Flex>
 
-          <ConnectWalletButton />
+          <Box w={{ base: "200px", md: "360px" }} display="flex" justifyContent="flex-end">
+            <ConnectWalletButton />
+          </Box>
         </Flex>
       </Container>
     </Box>

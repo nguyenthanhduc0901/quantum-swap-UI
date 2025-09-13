@@ -43,6 +43,20 @@ function parseError(err: unknown): string {
     if (typeof withShort.shortMessage === "string") return withShort.shortMessage;
     const withMsg = err as { message?: unknown };
     if (typeof withMsg.message === "string") return withMsg.message;
+    // viem style error objects
+    const withMeta = err as { cause?: unknown; name?: unknown; details?: unknown; code?: unknown };
+    const parts: string[] = [];
+    if (typeof withMeta.name === "string") parts.push(withMeta.name);
+    if (typeof withMeta.code === "string") parts.push(`code: ${withMeta.code}`);
+    if (typeof withMeta.details === "string") parts.push(withMeta.details);
+    // unwrap cause recursively if possible
+    if (withMeta.cause && typeof withMeta.cause === "object") {
+      try {
+        const sub = parseError(withMeta.cause as unknown);
+        if (sub && sub !== "Unknown error") parts.push(sub);
+      } catch {}
+    }
+    if (parts.length > 0) return parts.join(" | ");
     try {
       return JSON.stringify(err);
     } catch {

@@ -1,0 +1,34 @@
+{
+  "_format": "manual-artifact-1",
+  "contractName": "QuantumSwapFactory",
+  "sourceName": "contracts/core/QuantumSwapFactory.sol",
+  "abi": [
+    {
+      "inputs": [
+        { "internalType": "address", "name": "tokenA", "type": "address" },
+        { "internalType": "address", "name": "tokenB", "type": "address" }
+      ],
+      "name": "getPair",
+      "outputs": [ { "internalType": "address", "name": "pair", "type": "address" } ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [ { "internalType": "uint256", "name": "index", "type": "uint256" } ],
+      "name": "allPairs",
+      "outputs": [ { "internalType": "address", "name": "pair", "type": "address" } ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "allPairsLength",
+      "outputs": [ { "internalType": "uint256", "name": "count", "type": "uint256" } ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}
+
+
+

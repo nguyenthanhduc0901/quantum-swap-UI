@@ -12,6 +12,8 @@ type Props = {
   amount: string;
   onAmountChange: (value: string) => void;
   onTokenSelect: () => void;
+  refreshKey?: number;
+  onSetMax?: () => void;
 };
 
 function getIconForSymbol(symbol?: string) {
@@ -21,16 +23,21 @@ function getIconForSymbol(symbol?: string) {
   return FaCoins;
 }
 
-export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect }: Props) {
+export function TokenInput({ label, token, amount, onAmountChange, onTokenSelect, refreshKey, onSetMax }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   useEffect(() => { setImgFailed(false); }, [token?.logoURI, token?.symbol]);
   return (
     <Flex direction="column" gap={2}>
       <Flex justify="space-between" align="center">
         <Text fontSize="sm" color="gray.400" fontWeight="medium">{label}</Text>
-        {token && (
-          <Balance tokenAddress={token.address} />
-        )}
+        <Flex align="center" gap={3}>
+          {token && (
+            <Balance key={`${token.address}-${refreshKey ?? 0}`} tokenAddress={token.address} />
+          )}
+          {onSetMax && (
+            <Button size="xs" variant="outline" onClick={onSetMax}>MAX</Button>
+          )}
+        </Flex>
       </Flex>
 
       <Box borderWidth="1px" borderColor="panelBorder" bg="transparent" rounded="lg" px={3} py={2}>

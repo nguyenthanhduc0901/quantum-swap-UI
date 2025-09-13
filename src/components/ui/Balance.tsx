@@ -6,7 +6,12 @@ import { ethers } from "ethers";
 
 export function Balance({ tokenAddress }: { tokenAddress: `0x${string}` }) {
   const { address } = useAccount();
-  const { data, isLoading } = useBalance({ address, token: tokenAddress, query: { enabled: Boolean(address) } });
+  const { data, isLoading } = useBalance({
+    address,
+    token: tokenAddress,
+    watch: true, // auto refetch on new blocks (after swap/add/remove)
+    query: { enabled: Boolean(address), staleTime: 0, refetchOnWindowFocus: true },
+  });
 
   if (isLoading) return <Skeleton height="16px" width="100px" />;
   if (!data) return <Text color="gray.500">-</Text>;
@@ -15,6 +20,7 @@ export function Balance({ tokenAddress }: { tokenAddress: `0x${string}` }) {
   const short = Number(formatted).toLocaleString(undefined, { maximumFractionDigits: 6 });
   return <Text color="gray.600">{short} {data.symbol}</Text>;
 }
+
 
 
 
