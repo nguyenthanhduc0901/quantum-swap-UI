@@ -6,9 +6,9 @@ import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
 export default function PoolPage() {
   return (
     <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
-      <VStack align="stretch" spacing={{ base: 8, md: 10 }}>
+      <VStack align="stretch" gap={{ base: 8, md: 10 }}>
         {/* 1. Header của trang được thiết kế lại */}
-        <VStack align="flex-start" spacing={2}>
+        <VStack align="flex-start" gap={2}>
           <Heading as="h1" size="2xl" color="whiteAlpha.900">
             Liquidity Pool
           </Heading>

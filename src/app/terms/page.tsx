@@ -1,4 +1,4 @@
-import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
+import { Container, Heading, Text, VStack } from "@chakra-ui/react";
 
 export default function TermsPage() {
   return (

@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useEffect } from "react";
 import {
-  Box, Flex, Heading, Text, IconButton, VStack, HStack, Button,
-  useDisclosure, // Thêm các component cần thiết
+  Box, Flex, Heading, Text, IconButton, VStack,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { FiArrowDown, FiSettings, FiAlertTriangle } from "react-icons/fi";
-import { GradientButton } from "./ui/GradientButton";
+import { FiArrowDown, FiSettings } from "react-icons/fi";
+import { GradientButton } from "@/components/ui/GradientButton";
 import { SettingsModal } from "./ui/SettingsModal";
 import { TokenInfo, getDefaultTokens } from "../constants/tokens";
 import { TokenSelectModal } from "./ui/TokenSelectModal";
@@ -14,7 +14,7 @@ import { TokenInput } from "./ui/TokenInput"; // QUAN TRỌNG: Tái sử dụng!
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
 import { type Abi, formatUnits, parseUnits } from "viem";
 import { quantumSwapRouterAbi as routerAbi, quantumSwapPairAbi as erc20Abi, quantumSwapFactoryAbi as factoryAbi } from "../constants/abi/minimal";
-import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
+import { getContracts } from "../constants/addresses";
 import { useTransactionStatus } from "../hooks/useTransactionStatus";
 import { useSettings } from "@/contexts/SettingsContext";
 
@@ -46,7 +46,7 @@ export function SwapComponent({ onTokenChange }: SwapComponentProps) {
   const account = useAccount();
   const contracts = getContracts(chainId);
   const router = contracts?.QuantumSwapRouter as `0x${string}`;
-  const weth = contracts?.WETH as `0x${string}`;
+  const _weth = contracts?.WETH as `0x${string}`;
   const defaults = getDefaultTokens(chainId);
   const [inputToken, setInputToken] = useState<TokenInfo | null>(defaults[0]);
   const [outputToken, setOutputToken] = useState<TokenInfo | null>(defaults[1]);
@@ -60,8 +60,8 @@ export function SwapComponent({ onTokenChange }: SwapComponentProps) {
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const { slippageTolerance, deadlineMinutes, setSlippageTolerance, setDeadlineMinutes } = useSettings();
   const { open: isSettingsOpen, onOpen: onOpenSettings, onClose: onCloseSettings } = useDisclosure();
-  const { open: isDetailsOpen, onToggle: onToggleDetails } = useDisclosure();
-  const { open: isConfirmOpen, onOpen: onOpenConfirm, onClose: onCloseConfirm } = useDisclosure();
+  const { open: _isDetailsOpen } = useDisclosure();
+  const { open: _isConfirmOpen } = useDisclosure();
   const publicClient = usePublicClient();
 
   const routePath = useMemo(() => inputToken && outputToken ? [inputToken.address, outputToken.address] : [], [inputToken, outputToken]);

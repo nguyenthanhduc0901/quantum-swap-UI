@@ -1,21 +1,17 @@
 "use client";
 
 import NextLink from "next/link";
-import { Container, Flex, Heading, Text, HStack, Button, Box, VStack, SimpleGrid } from "@chakra-ui/react";
-import { motion } from "framer-motion";
-import { FiArrowRight } from "react-icons/fi";
-import { FaEthereum, FaCoins } from "react-icons/fa";
+import { Container, Flex, Heading, Text, HStack, Box, VStack, SimpleGrid } from "@chakra-ui/react";
 import { FeatureCard } from "@/components/ui/FeatureCard";
 import { FaBolt, FaShieldAlt, FaLayerGroup, FaUsers } from "react-icons/fa";
 import { HeroPlanet } from "@/components/ui/HeroPlanet";
 import { GradientButton } from "@/components/ui/GradientButton";
 
-const MotionBox = motion(Box);
 const BRAND_GRADIENT_CSS = "linear-gradient(to top right, #0052FF, #00FFC2)";
 
 export default function Home() {
   return (
-    <VStack w="full" spacing={{ base: 20, md: 24 }} align="stretch">
+    <VStack w="full" gap={{ base: 20, md: 24 }} align="stretch">
       {/* Hero Section - dark, spacious, planet on left, copy on right */}
       <Box w="full" bgGradient="linear(to-b, #0b1220, #0a1426)" rounded="2xl" p={{ base: 8, md: 14 }}>
         <Flex direction={{ base: "column", md: "row" }} align="center" gap={{ base: 10, md: 14 }}>
@@ -53,7 +49,7 @@ export default function Home() {
 
       {/* Section 2: Why Choose QuantumSwap? */}
       <Container maxW="container.lg">
-        <VStack align="stretch" spacing={8}>
+        <VStack align="stretch" gap={8}>
           <Box display="flex" justifyContent="center">
             <Box h="6px" w={{ base: 120, md: 160 }} rounded="full" style={{ background: "linear-gradient(90deg, #0052FF 0%, #00D1B2 100%)", boxShadow: "0 0 8px rgba(0,209,178,0.3)" }} />
           </Box>
@@ -77,9 +73,9 @@ export default function Home() {
 
   {/* Section 3: Getting Started in 3 Easy Steps */}
   <Container maxW="container.lg" py={{ base: 16, md: 24 }}>
-    <VStack align="stretch" spacing={12}>
+    <VStack align="stretch" gap={12}>
       {/* --- Header --- */}
-      <VStack spacing={4}>
+      <VStack gap={4}>
         <Box
           h="6px"
           w={{ base: 140, md: 180 }}
@@ -101,7 +97,7 @@ export default function Home() {
           flex={1}
           p={6}
           align="flex-start"
-          spacing={3}
+          gap={3}
           rounded="2xl"
           bg="rgba(23, 35, 53, 0.5)"
           backdropFilter="blur(10px)"
@@ -137,7 +133,7 @@ export default function Home() {
           flex={1}
           p={6}
           align="flex-start"
-          spacing={3}
+          gap={3}
           rounded="2xl"
           bg="rgba(23, 35, 53, 0.5)"
           backdropFilter="blur(10px)"
@@ -173,7 +169,7 @@ export default function Home() {
           flex={1}
           p={6}
           align="flex-start"
-          spacing={3}
+          gap={3}
           rounded="2xl"
           bg="rgba(23, 35, 53, 0.5)"
           backdropFilter="blur(10px)"
@@ -209,9 +205,9 @@ export default function Home() {
 
   {/* Section 4: Protocol at a Glance */}
   <Container maxW="container.lg" pb={{ base: 16, md: 24 }}>
-    <VStack align="stretch" spacing={12}>
+    <VStack align="stretch" gap={12}>
       {/* --- Header --- */}
-      <VStack spacing={4}>
+      <VStack gap={4}>
         <Box
           h="6px"
           w={{ base: 140, md: 180 }}

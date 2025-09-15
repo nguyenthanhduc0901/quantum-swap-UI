@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatAmountFromBigInt as fmtBI, formatNumber as fmtNum, shortAddress as shortAddr } from "@/lib/format";
+import { formatAmountFromBigInt as fmtBI, shortAddress as shortAddr } from "@/lib/format";
 import { Container, Heading, VStack, Box, Text, Skeleton, HStack, Input, Grid, GridItem } from "@chakra-ui/react";
 import { TokenImage } from "@/components/ui/TokenImage";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
@@ -83,7 +83,7 @@ export default function PortfolioPage() {
       amount0: token0 ? share0 / 10 ** token0.decimals : 0,
       amount1: token1 ? share1 / 10 ** token1.decimals : 0,
     };
-  }).filter(Boolean) as Array<{ pair: `0x${string}`; balance: bigint; token0?: any; token1?: any; amount0: number; amount1: number }>, [pairAddresses, lpReads.data, tokens]);
+  }).filter(Boolean) as Array<{ pair: `0x${string}`; balance: bigint; token0?: { address: `0x${string}`; symbol: string; decimals: number } | undefined; token1?: { address: `0x${string}`; symbol: string; decimals: number } | undefined; amount0: number; amount1: number }>, [pairAddresses, lpReads.data, tokens]);
 
   const isLoading = loadingList || tokenReads.isLoading || lenRead.isLoading || pairsRes.isLoading || lpReads.isLoading;
 
@@ -103,21 +103,19 @@ export default function PortfolioPage() {
   });
   const wethUsdPair = (wethPairReads.data?.[0]?.result as `0x${string}` | undefined) || (wethPairReads.data?.[1]?.result as `0x${string}` | undefined);
   const wethReservesRead = useReadContract({ address: wethUsdPair, abi: pairAbi as Abi, functionName: "getReserves", query: { enabled: Boolean(wethUsdPair), refetchInterval: 15_000 } });
-  const wethUsdPrice = useMemo(() => {
+  const _wethUsdPrice = useMemo(() => {
     if (!weth || !(usdc || dai) || !wethReservesRead.data) return undefined;
-    const [r0, r1] = wethReservesRead.data as unknown as [bigint, bigint, number];
-    // Determine order
-    // token0/token1 unknown; fetch token0 to determine order
-    return undefined; // placeholder, computed later below together with token0 order
+    const [_r0, _r1] = wethReservesRead.data as unknown as [bigint, bigint, number];
+    return undefined;
   }, [wethReservesRead.data, weth, usdc, dai]);
 
   // For efficiency build pairs for all tokens vs USDC/DAI/WETH
   const pricePairCalls = useMemo(() => {
-    const out: any[] = [];
+    const out: Array<{ address: `0x${string}`; abi: Abi; functionName: "getPair"; args: [`0x${string}`, `0x${string}`] }> = [];
     for (const t of tokens) {
-      if (usdc) out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair" as const, args: [t.address, usdc.address] });
-      if (dai)  out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair" as const, args: [t.address, dai.address]  });
-      if (weth) out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair" as const, args: [t.address, weth.address] });
+      if (usdc) out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair", args: [t.address, usdc.address] });
+      if (dai)  out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair", args: [t.address, dai.address]  });
+      if (weth) out.push({ address: factory, abi: factoryAbi as Abi, functionName: "getPair", args: [t.address, weth.address] });
     }
     return out;
   }, [tokens, factory, usdc, dai, weth]);
@@ -181,8 +179,9 @@ export default function PortfolioPage() {
     let ethUsd: number | undefined;
     if (weth && (usdc || dai)) {
       const stableMeta = usdc ?? dai!;
-      const addr = (hasUSDC ? pairAddrs[tokens.findIndex(t => t.address.toLowerCase() === weth.address.toLowerCase()) * callsPerToken + 0] : undefined)
-        || (hasDAI ? pairAddrs[tokens.findIndex(t => t.address.toLowerCase() === weth.address.toLowerCase()) * callsPerToken + (hasUSDC ? 1 : 0)] : undefined);
+      const idx = tokens.findIndex(t => t.address.toLowerCase() === weth.address.toLowerCase());
+      const addr = (hasUSDC ? pairAddrs[idx * callsPerToken + 0] : undefined)
+        || (hasDAI ? pairAddrs[idx * callsPerToken + (hasUSDC ? 1 : 0)] : undefined);
       if (addr) {
         const info = pairInfo[addr.toLowerCase()];
         const tokenIsToken0 = info?.token0?.toLowerCase() === weth.address.toLowerCase();
@@ -221,7 +220,7 @@ export default function PortfolioPage() {
       map[t.address] = price;
     }
     return map;
-  }, [tokens, usdc, dai, weth, pricePairsRes.data, reservesRes.data]);
+  }, [tokens, usdc, dai, weth, pricePairsRes.data, reservesRes.data, t0t1Res.data, validPairs]);
 
   const totalUsd = useMemo(() => {
     let sum = 0;
@@ -382,7 +381,7 @@ function short(addr?: string) {
   return addr.slice(0, 6) + "…" + addr.slice(-4);
 }
 
-function pairName(it: { token0?: any; token1?: any }) {
+function pairName(it: { token0?: { symbol: string } | undefined; token1?: { symbol: string } | undefined }) {
   const a = it.token0?.symbol ?? "TKN0";
   const b = it.token1?.symbol ?? "TKN1";
   return `${a} / ${b}`;

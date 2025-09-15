@@ -8,7 +8,7 @@ import {
   Image, // Để hiển thị logo connector
 } from "@chakra-ui/react";
 import { FiCopy, FiCheck } from "react-icons/fi";
-import { GradientButton } from "./GradientButton";
+import { GradientButton } from "@/components/ui/GradientButton";
 import { useAccount, useBalance, useConnect, useDisconnect, useEnsName } from "wagmi";
 
 function truncateAddress(addr?: string) {
@@ -164,7 +164,7 @@ export function ConnectWalletButton() {
               size="lg"
             >
               <HStack gap={3}>
-                <Image src={(connector as any).icon} alt={connector.name} boxSize="24px" />
+                <Image src={(connector as unknown as { icon?: string }).icon} alt={connector.name} boxSize="24px" />
                 <Text>{connector.name}</Text>
               </HStack>
             </Button>

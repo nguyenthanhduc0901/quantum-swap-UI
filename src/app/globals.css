@@ -38,7 +38,13 @@ body::after {
 }
 
 
-/* --- 2. Tạo và Di chuyển Quầng sáng ĐÃ TỐI ƯU --- */
+/* --- 2. Spinner Animation --- */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- 3. Tạo và Di chuyển Quầng sáng ĐÃ TỐI ƯU --- */
 
 @keyframes moveGlow {
   0% { transform: translate(10vw, -15vh) scale(1); }

@@ -50,7 +50,9 @@ export function TokenInput({
   step = 1,
 }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => { setImgFailed(false); }, [token?.logoURI, token?.symbol]);
+  useEffect(() => { setMounted(true); }, []);
 
   function toNumber(value: string): number {
     const n = parseFloat(value || "0");
@@ -130,7 +132,7 @@ export function TokenInput({
           h="auto" // Chiều cao tự động
         >
           <Flex align="center" gap={2}>
-            {token?.logoURI && !imgFailed ? (
+            {mounted && token?.logoURI && !imgFailed ? (
               <Image
                 src={token.logoURI}
                 alt={token.symbol}
@@ -146,7 +148,7 @@ export function TokenInput({
               />
             )}
             <Text fontSize="lg" fontWeight="semibold" color="white">
-              {token?.symbol ?? "Select Token"}
+              {mounted ? (token?.symbol ?? "Select Token") : "Select Token"}
             </Text>
           </Flex>
         </Button>

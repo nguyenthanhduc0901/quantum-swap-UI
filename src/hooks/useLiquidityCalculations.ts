@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useAccount, useChainId, useReadContract } from "wagmi";
+import { useChainId, useReadContract } from "wagmi";
 import type { Abi } from "viem";
 import { quantumSwapFactoryAbi as factoryAbi, quantumSwapRouterAbi as routerAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts, type QuantumSwapAddresses } from "@/constants/addresses";
@@ -28,7 +28,6 @@ type Output = {
 
 export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: Inputs): Output {
   const chainId = useChainId() ?? 31337;
-  const account = useAccount();
   const contracts = getContracts(chainId) as QuantumSwapAddresses | undefined;
   const factory = (contracts?.QuantumSwapFactory ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
   const router = (contracts?.QuantumSwapRouter ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
@@ -60,7 +59,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
   const tokenOrder = useMemo(() => {
     if (!tokenA || !tokenB) return null;
     return tokenA.address.toLowerCase() < tokenB.address.toLowerCase() ? "A-first" : "B-first";
-  }, [tokenA?.address, tokenB?.address]);
+  }, [tokenA, tokenB]);
 
   const reserves = useMemo(() => {
     if (!pairExists || !reservesRead.data || !tokenOrder || !tokenA || !tokenB) return null;

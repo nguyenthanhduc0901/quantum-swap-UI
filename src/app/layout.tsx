@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "../components/layout/Navbar";
@@ -50,10 +51,21 @@ export default function RootLayout({
         <div className="glow-effect blue" />
         <Providers>
           <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-            <TopProgress />
+            <Suspense fallback={null}>
+              <TopProgress />
+            </Suspense>
             <Navbar />
             <main style={{ flex: 1, width: "100%" }}>
-              {children}
+              <Suspense fallback={
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center", padding: "16px", background: "rgba(23,35,53,0.6)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", backdropFilter: "blur(10px)" }}>
+                    <div style={{ width: "24px", height: "24px", border: "2px solid #00D1B2", borderRightColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    <div style={{ color: "rgba(255,255,255,0.9)", fontWeight: "600" }}>Loading…</div>
+                  </div>
+                </div>
+              }>
+                {children}
+              </Suspense>
             </main>
             <Footer />
           </div>

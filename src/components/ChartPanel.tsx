@@ -85,7 +85,7 @@ export function ChartPanel({ inputToken, outputToken }: ChartPanelProps) {
       setData(generateMockLineData(240, baseValue));
       setLastUpdated(new Date());
     }
-  }, [inputToken?.address, outputToken?.address]);
+  }, [inputToken, outputToken]);
 
   const lastPrice = data[data.length - 1]?.value ?? 0;
   const firstPrice = data[0]?.value ?? 0;

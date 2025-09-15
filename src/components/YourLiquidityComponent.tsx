@@ -12,7 +12,7 @@ import { LiquidityPositionCard } from "./LiquidityPositionCard";
 import { useTokenList } from "@/hooks/useTokenList";
 import { quantumSwapFactoryAbi as factoryAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts } from "@/constants/addresses";
-import { GradientButton } from "./ui/GradientButton";
+import { GradientButton } from "@/components/ui/GradientButton";
 
 // Logic hooks và state không thay đổi nhiều, chỉ tổ chức lại
 export function YourLiquidityComponent() {

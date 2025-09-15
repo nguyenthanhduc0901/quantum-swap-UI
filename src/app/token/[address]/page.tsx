@@ -1,7 +1,7 @@
 "use client";
 
 import { notFound, useParams } from "next/navigation";
-import { Container, Heading, HStack, Text, VStack, Box, Skeleton } from "@chakra-ui/react";
+import { Container, Heading, Text, VStack, Box, Skeleton } from "@chakra-ui/react";
 import { useMemo } from "react";
 import { useChainId, useReadContract, useReadContracts } from "wagmi";
 import type { Abi } from "viem";

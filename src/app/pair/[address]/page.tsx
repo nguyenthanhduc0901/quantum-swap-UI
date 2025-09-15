@@ -1,20 +1,21 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Container, Heading, VStack, Box, Text, HStack, Skeleton, Button, Image, IconButton } from "@chakra-ui/react";
+import { Container, Heading, VStack, Box, Text, HStack, Button, Image, IconButton } from "@chakra-ui/react";
 import { useChainId, usePublicClient, useReadContract, useReadContracts, useWatchContractEvent } from "wagmi";
 import type { Abi, Log } from "viem";
-import { decodeEventLog } from "viem";
-import { useEffect, useMemo, useState } from "react";
+import { decodeEventLog, parseAbiItem } from "viem";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import NextLink from "next/link";
 import { FiCopy } from "react-icons/fi";
 import { useTokenList } from "@/hooks/useTokenList";
+import { GradientButton } from "@/components/ui/GradientButton";
 
 export default function PairDetailPage() {
   const params = useParams<{ address: `0x${string}` }>();
   const pair = params?.address as `0x${string}` | undefined;
-  const chainId = useChainId() ?? 31337;
+  const _chainId = useChainId() ?? 31337;
   const publicClient = usePublicClient();
 
   const reserves = useReadContract({ address: pair, abi: pairAbi as Abi, functionName: "getReserves", query: { enabled: Boolean(pair) } });
@@ -54,7 +55,35 @@ export default function PairDetailPage() {
 
   // Recent swap logs
   const [logs, setLogs] = useState<Log[]>([]);
-  // Recent swap logs – initial fetch + live updates via watcher
+
+  // Decode swap event safely
+  const decodeSwap = useCallback((l: Log) => {
+    try {
+      const ev = decodeEventLog({ abi: pairAbi as Abi, data: l.data!, topics: l.topics as unknown as [`0x${string}`, ...`0x${string}`[]] });
+      if (ev.eventName !== "Swap") return undefined;
+      const args = ev.args as unknown as { amount0In: bigint; amount1In: bigint; amount0Out: bigint; amount1Out: bigint };
+      const a0In = Number(args.amount0In);
+      const a1In = Number(args.amount1In);
+      const a0Out = Number(args.amount0Out);
+      const a1Out = Number(args.amount1Out);
+      let dir = "";
+      let price: number | undefined = undefined; // token0 in token1
+      if (a1Out > 0 && a0In > 0) { // 0 -> 1
+        dir = `${sym0}→${sym1}`;
+        price = (a1Out / 10 ** dec1) / (a0In / 10 ** dec0);
+      } else if (a0Out > 0 && a1In > 0) { // 1 -> 0
+        dir = `${sym1}→${sym0}`;
+        const p10 = (a0Out / 10 ** dec0) / (a1In / 10 ** dec1);
+        price = p10 > 0 ? 1 / p10 : undefined;
+      }
+      const out = a0Out > 0 ? a0Out / 10 ** dec0 : a1Out / 10 ** dec1;
+      return { block: l.blockNumber?.toString(), tx: l.transactionHash, dir, out, price };
+    } catch { return undefined; }
+  }, [dec0, dec1, sym0, sym1]);
+
+  const swapEvent = parseAbiItem('event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, address indexed to)');
+
+  // Recent swap logs – initial fetch
   useEffect(() => {
     if (!pair || !publicClient) return;
     let stale = false;
@@ -62,13 +91,12 @@ export default function PairDetailPage() {
       try {
         const latest = await publicClient.getBlockNumber();
         const fromBlock = latest > 5000n ? latest - 5000n : 0n;
-        const swapTopic = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822";
-        const fetched = await publicClient.getLogs({ address: pair, fromBlock, toBlock: latest, topics: [swapTopic] });
+        const fetched = await publicClient.getLogs({ address: pair, fromBlock, toBlock: latest, event: swapEvent });
         if (!stale) setLogs(fetched.slice(-20).reverse());
       } catch {}
     })();
     return () => { stale = true; };
-  }, [pair, publicClient]);
+  }, [pair, publicClient, swapEvent]);
 
   useWatchContractEvent({
     address: pair,
@@ -79,8 +107,7 @@ export default function PairDetailPage() {
         if (!publicClient || !pair) return;
         const latest = await publicClient.getBlockNumber();
         const fromBlock = latest > 1000n ? latest - 1000n : 0n;
-        const swapTopic = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822";
-        const fetched = await publicClient.getLogs({ address: pair, fromBlock, toBlock: latest, topics: [swapTopic] });
+        const fetched = await publicClient.getLogs({ address: pair, fromBlock, toBlock: latest, event: swapEvent });
         setLogs(fetched.slice(-20).reverse());
       } catch {}
     },
@@ -93,35 +120,7 @@ export default function PairDetailPage() {
   const price0 = res0 > 0 ? res1 / res0 : undefined;
   const price1 = res1 > 0 ? res0 / res1 : undefined;
 
-  function short(addr?: string) {
-    if (!addr) return "...";
-    return addr.slice(0, 6) + "…" + addr.slice(-4);
-  }
-
-  function decodeSwap(l: Log) {
-    try {
-      const ev = decodeEventLog({ abi: pairAbi as Abi, data: l.data!, topics: l.topics as any });
-      if (ev.eventName !== "Swap") return undefined;
-      const { amount0In, amount1In, amount0Out, amount1Out } = ev.args as any;
-      const a0In = Number(amount0In);
-      const a1In = Number(amount1In);
-      const a0Out = Number(amount0Out);
-      const a1Out = Number(amount1Out);
-      let dir = "";
-      let price: number | undefined = undefined; // token0 in token1
-      if (a1Out > 0 && a0In > 0) { // 0 -> 1
-        dir = `${sym0}→${sym1}`;
-        price = (a1Out / 10 ** dec1) / (a0In / 10 ** dec0);
-      } else if (a0Out > 0 && a1In > 0) { // 1 -> 0
-        dir = `${sym1}→${sym0}`;
-        // derive price 1 token0 = ? token1 → inverse of (amount0Out/amount1In)
-        const p10 = (a0Out / 10 ** dec0) / (a1In / 10 ** dec1);
-        price = p10 > 0 ? 1 / p10 : undefined;
-      }
-      const out = a0Out > 0 ? a0Out / 10 ** dec0 : a1Out / 10 ** dec1;
-      return { block: l.blockNumber?.toString(), tx: l.transactionHash, dir, out, price };
-    } catch { return undefined; }
-  }
+  function copy(text?: string) { if (!text) return; try { void navigator.clipboard.writeText(text); } catch {} }
 
   const priceSeries = useMemo(() => {
     const pts: number[] = [];
@@ -130,9 +129,7 @@ export default function PairDetailPage() {
       if (d?.price && isFinite(d.price)) pts.push(d.price);
     }
     return pts.slice(-40);
-  }, [logs]);
-
-  function copy(text?: string) { if (!text) return; try { void navigator.clipboard.writeText(text); } catch {} }
+  }, [logs, decodeSwap]);
 
   function Sparkline({ data }: { data: number[] }) {
     if (!data || data.length < 2) return <Box h="40px" />;
@@ -168,9 +165,7 @@ export default function PairDetailPage() {
                 <Text color="whiteAlpha.700" fontSize="sm">Token0</Text>
                 <HStack>
                   <Image src={logo0} alt={sym0} boxSize="20px" rounded="full" />
-                  <Button as={NextLink} href={`/token/${token0.data as string}`} size="xs" variant="ghost" color="white" _hover={{ bg: 'whiteAlpha.200' }}>
-                    {sym0}
-                  </Button>
+                  <NextLink href={`/token/${token0.data as string}`}><Button as="span" size="xs" variant="ghost" color="white" _hover={{ bg: 'whiteAlpha.200' }}>{sym0}</Button></NextLink>
                   <IconButton aria-label="Copy token0" size="xs" variant="ghost" color="whiteAlpha.700" _hover={{ bg: 'whiteAlpha.200' }} onClick={() => copy(token0.data as string)}>
                     <FiCopy />
                   </IconButton>
@@ -180,9 +175,7 @@ export default function PairDetailPage() {
                 <Text color="whiteAlpha.700" fontSize="sm">Token1</Text>
                 <HStack>
                   <Image src={logo1} alt={sym1} boxSize="20px" rounded="full" />
-                  <Button as={NextLink} href={`/token/${token1.data as string}`} size="xs" variant="ghost" color="white" _hover={{ bg: 'whiteAlpha.200' }}>
-                    {sym1}
-                  </Button>
+                  <NextLink href={`/token/${token1.data as string}`}><Button as="span" size="xs" variant="ghost" color="white" _hover={{ bg: 'whiteAlpha.200' }}>{sym1}</Button></NextLink>
                   <IconButton aria-label="Copy token1" size="xs" variant="ghost" color="whiteAlpha.700" _hover={{ bg: 'whiteAlpha.200' }} onClick={() => copy(token1.data as string)}>
                     <FiCopy />
                   </IconButton>
@@ -204,9 +197,9 @@ export default function PairDetailPage() {
               <Text color="whiteAlpha.800">1 {sym1} ≈ {price1 ? price1.toLocaleString(undefined, { maximumFractionDigits: 6 }) : "-"} {sym0}</Text>
             </HStack>
             <HStack gap={2} pt={2}>
-              <Button as={NextLink} href="/swap" size="sm" bg="whiteAlpha.200" _hover={{ bg: "whiteAlpha.300" }} color="white">Swap</Button>
-              <Button as={NextLink} href="/pool" size="sm" variant="outline" borderColor="whiteAlpha.300" color="white">Add Liquidity</Button>
-              <Button as={NextLink} href={`/pool/remove/${pair}`} size="sm" variant="outline" borderColor="whiteAlpha.300" color="white">Remove</Button>
+              <GradientButton href="/swap" size="sm" hoverOnly>Swap</GradientButton>
+              <GradientButton href="/pool" size="sm" hoverOnly>Add Liquidity</GradientButton>
+              <GradientButton href={`/pool/remove/${pair}`} size="sm" hoverOnly>Remove</GradientButton>
             </HStack>
             <Box pt={2}>
               <Sparkline data={priceSeries} />

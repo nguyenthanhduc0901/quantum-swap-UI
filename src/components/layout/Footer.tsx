@@ -80,6 +80,7 @@ export function Footer() {
               <Text fontWeight="semibold" color="whiteAlpha.900">Support</Text>
               <FooterLink href="#">Help Center</FooterLink>
               <FooterLink href="#">FAQ</FooterLink>
+              <FooterLink href="/terms">Terms</FooterLink>
             </VStack>
           </SimpleGrid>
 

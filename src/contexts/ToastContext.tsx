@@ -43,7 +43,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ToastContext.Provider value={{ push, update }}>
       {children}
-      <VStack spacing={3} position="fixed" bottom={4} right={4} zIndex={10000} align="flex-end">
+      <VStack gap={3} position="fixed" bottom={4} right={4} zIndex={10000} align="flex-end">
         <AnimatePresence>
           {toasts.map((toast) => (
             <CustomToast key={toast.id} {...toast} />

@@ -52,7 +52,7 @@ export function CustomToast({ title, description, kind }: Props) {
             {kind === "loading" ? (
               <Spinner size="sm" color="whiteAlpha.700" />
             ) : (
-              <Icon as={icon as any} boxSize={5} color="whiteAlpha.900" />
+              <Icon as={icon} boxSize={5} color="whiteAlpha.900" />
             )}
           </Box>
           <Flex direction="column" gap={1}>

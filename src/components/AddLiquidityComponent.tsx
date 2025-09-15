@@ -1,10 +1,11 @@
 "use client";
 import { useMemo, useState, useEffect } from "react";
-import { Box, Center, Flex, Heading, Text, VStack, IconButton } from "@chakra-ui/react";
+import { Box, Center, Flex, Heading, Text, VStack } from "@chakra-ui/react";
 import { FiPlus } from "react-icons/fi"; // Biểu tượng dấu cộng thay thế
-import { GradientButton } from "./ui/GradientButton";
+import { GradientButton } from "@/components/ui/GradientButton";
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import type { Abi } from "viem";
+import { parseUnits } from "viem";
 
 // --- Import các component và hook đã được thiết kế lại ---
 import { TokenSelectModal } from "@/components/ui/TokenSelectModal";
@@ -31,7 +32,7 @@ export function AddLiquidityComponent() {
   const chainId = useChainId() ?? 31337;
   const account = useAccount();
   const contracts = getContracts(chainId) as QuantumSwapAddresses | undefined;
-  const router = (contracts?.QuantumSwapRouter ?? "0x0") as `0x${string}`;
+  const router = contracts?.QuantumSwapRouter as `0x${string}` | undefined;
 
   const defaults = useMemo(() => getDefaultTokens(chainId), [chainId]);
   const [tokenA, setTokenA] = useState<TokenInfo | null>(defaults[0] ?? null);
@@ -40,16 +41,16 @@ export function AddLiquidityComponent() {
   const [amountB, setAmountB] = useState("");
   const [selecting, setSelecting] = useState<"A" | "B" | null>(null);
 
-  const { pairAddress, pairExists, reserves, estimatedAmountA, estimatedAmountB, priceAB, priceBA, shareOfPool } = useLiquidityCalculations({ tokenA, tokenB, amountA, amountB });
+  const { priceAB, priceBA, shareOfPool, reserves } = useLiquidityCalculations({ tokenA, tokenB, amountA, amountB });
   const sameToken = useMemo(() => tokenA && tokenB && tokenA.address.toLowerCase() === tokenB.address.toLowerCase(), [tokenA, tokenB]);
 
   // Không tự động điền. Chỉ hiển thị thông tin khi cả hai trường đã nhập.
 
-  const allowanceA = useReadContract({ address: tokenA?.address, abi: pairAbi as Abi, functionName: "allowance", args: account.address && tokenA ? [account.address, router] : undefined, query: { enabled: Boolean(account.address && tokenA) } });
-  const allowanceB = useReadContract({ address: tokenB?.address, abi: pairAbi as Abi, functionName: "allowance", args: account.address && tokenB ? [account.address, router] : undefined, query: { enabled: Boolean(account.address && tokenB) } });
+  const allowanceA = useReadContract({ address: tokenA?.address, abi: pairAbi as Abi, functionName: "allowance", args: account.address && tokenA && router ? [account.address, router] : undefined, query: { enabled: Boolean(account.address && tokenA && router) } });
+  const allowanceB = useReadContract({ address: tokenB?.address, abi: pairAbi as Abi, functionName: "allowance", args: account.address && tokenB && router ? [account.address, router] : undefined, query: { enabled: Boolean(account.address && tokenB && router) } });
 
-  const amountAWei = tokenA ? BigInt(Math.floor(Number(amountA || "0") * 10 ** tokenA.decimals)) : 0n;
-  const amountBWei = tokenB ? BigInt(Math.floor(Number(amountB || "0") * 10 ** tokenB.decimals)) : 0n;
+  const amountAWei = tokenA ? parseUnits((amountA || "0") as `${string}`, tokenA.decimals) : 0n;
+  const amountBWei = tokenB ? parseUnits((amountB || "0") as `${string}`, tokenB.decimals) : 0n;
   
   const needsApproveA = useMemo(() => tokenA && allowanceA.data ? ((allowanceA.data as bigint) < amountAWei) : false, [allowanceA.data, tokenA, amountAWei]);
   const needsApproveB = useMemo(() => tokenB && allowanceB.data ? ((allowanceB.data as bigint) < amountBWei) : false, [allowanceB.data, tokenB, amountBWei]);
@@ -63,17 +64,50 @@ export function AddLiquidityComponent() {
   useEffect(() => { setStep(needsApproveA ? "approveA" : needsApproveB ? "approveB" : "supply"); }, [needsApproveA, needsApproveB]);
 
   const { slippageTolerance, deadlineMinutes } = useSettings();
-  async function onApproveA() { try { if (!tokenA) return; const hash = await writeContractAsync({ address: tokenA.address, abi: pairAbi as Abi, functionName: "approve", args: [router, BigInt(2) ** BigInt(256) - BigInt(1)] }); setTxHash(hash); } catch (e) { /* user rejected or error */ } }
-  async function onApproveB() { try { if (!tokenB) return; const hash = await writeContractAsync({ address: tokenB.address, abi: pairAbi as Abi, functionName: "approve", args: [router, BigInt(2) ** BigInt(256) - BigInt(1)] }); setTxHash(hash); } catch (e) { /* user rejected or error */ } }
+
+  // Minimal ERC20 approve ABI
+  const ERC20_APPROVE = [{ name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{ type: "address" }, { type: "uint256" }], outputs: [{ type: "bool" }] }] as const;
+  const MAX_UINT = (2n ** 256n - 1n);
+
+  async function onApproveA() {
+    try {
+      if (!tokenA || !router) return;
+      const hash = await writeContractAsync({ address: tokenA.address, abi: ERC20_APPROVE as unknown as Abi, functionName: "approve", args: [router, MAX_UINT] });
+      setTxHash(hash);
+    } catch (e) { /* user rejected or error */ }
+  }
+  async function onApproveB() {
+    try {
+      if (!tokenB || !router) return;
+      const hash = await writeContractAsync({ address: tokenB.address, abi: ERC20_APPROVE as unknown as Abi, functionName: "approve", args: [router, MAX_UINT] });
+      setTxHash(hash);
+    } catch (e) { /* user rejected or error */ }
+  }
   async function onSupply() {
     try {
-      if (!tokenA || !tokenB) return;
+      if (!tokenA || !tokenB || !router || !account.address) return;
       const bps = BigInt(Math.floor(slippageTolerance * 100)); // 100 = hundredths of a percent
       const denom = 10000n; // basis points denominator
-      const amountAMin = amountAWei > 0n ? (amountAWei * (denom - bps)) / denom : 0n;
-      const amountBMin = amountBWei > 0n ? (amountBWei * (denom - bps)) / denom : 0n;
+
+      // Compute optimal amounts using current reserves to avoid INSUFFICIENT_*_MIN
+      let usedA = amountAWei;
+      let usedB = amountBWei;
+      if (reserves && reserves.reserveA > 0n && reserves.reserveB > 0n) {
+        const optimalB = (amountAWei * reserves.reserveB) / reserves.reserveA;
+        if (optimalB <= amountBWei) {
+          usedA = amountAWei;
+          usedB = optimalB;
+        } else {
+          const optimalA = (amountBWei * reserves.reserveA) / reserves.reserveB;
+          usedA = optimalA;
+          usedB = amountBWei;
+        }
+      }
+
+      const amountAMin = usedA > 0n ? (usedA * (denom - bps)) / denom : 0n;
+      const amountBMin = usedB > 0n ? (usedB * (denom - bps)) / denom : 0n;
       const deadline = BigInt(Math.floor(Date.now() / 1000)) + BigInt(deadlineMinutes) * 60n;
-      const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "addLiquidity", args: [tokenA.address, tokenB.address, amountAWei, amountBWei, amountAMin, amountBMin, account.address!, deadline] });
+      const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "addLiquidity", args: [tokenA.address, tokenB.address, amountAWei, amountBWei, amountAMin, amountBMin, account.address, deadline] });
       setTxHash(hash);
     } catch (e) { /* user rejected or error */ }
   }

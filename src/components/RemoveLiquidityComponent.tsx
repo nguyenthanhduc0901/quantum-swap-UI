@@ -1,44 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  Box, Flex, Heading, Text, HStack, Button, Spinner, Skeleton,
-  VStack,
+  Box, Flex, Heading, Text, HStack, Button, Skeleton,
+  VStack, Image
 } from "@chakra-ui/react";
-import { Global, css } from "@emotion/react";
-import { GradientButton } from "./ui/GradientButton";
+import { GradientButton } from "@/components/ui/GradientButton";
 import type { Abi } from "viem";
 import { formatUnits } from "viem";
-import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { useTransactionStatus } from "../hooks/useTransactionStatus";
-import { quantumSwapPairAbi as pairAbi, quantumSwapRouterAbi as routerAbi } from "../constants/abi/minimal";
-import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
+import { useAccount, useChainId, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { quantumSwapPairAbi as pairAbi, quantumSwapRouterAbi as routerAbi } from "@/constants/abi/minimal";
+import { getContracts } from "@/constants/addresses";
+import { useTokenList } from "@/hooks/useTokenList";
 import { useSettings } from "@/contexts/SettingsContext";
+import { useTransactionStatus } from "@/hooks/useTransactionStatus";
 
-// Component con để hiển thị thông tin
 function InfoRow({ label, value }: { label: string, value: React.ReactNode }) {
+  const isPrimitive = typeof value === 'string' || typeof value === 'number';
   return (
     <Flex justify="space-between" align="center">
-      <Text fontSize="sm" color="whiteAlpha.600">{label}</Text>
-      <Box fontSize="sm" fontWeight="medium" color="whiteAlpha.800">{value}</Box>
+      <Text color="whiteAlpha.600" fontSize="sm">{label}</Text>
+      {isPrimitive ? (
+        <Text color="whiteAlpha.800" fontSize="sm">{value as any}</Text>
+      ) : (
+        <Box>{value}</Box>
+      )}
     </Flex>
   );
 }
 
-// Component con để hiển thị số lượng token nhận được
-function TokenAmountDisplay({ symbol, amount, isLoading }: { symbol: string, amount: string, isLoading: boolean }) {
+function TokenAmountDisplay({ symbol, amount, logo, isLoading }: { symbol: string, amount: string, logo?: string, isLoading: boolean }) {
   return (
     <Flex justify="space-between" align="center" w="full">
-      {isLoading ? (
-        <Skeleton rounded="md"><Box h="24px" w="80px" /></Skeleton>
-      ) : (
-        <Text fontSize="lg" fontWeight="medium" color="whiteAlpha.800">{amount}</Text>
-      )}
-      {isLoading ? (
-        <Skeleton rounded="md"><Box h="24px" w="80px" /></Skeleton>
-      ) : (
+      <HStack>
+        <Image src={logo} boxSize="28px" rounded="full" fallback={<Box boxSize="28px" rounded="full" bg="whiteAlpha.300" />} />
         <Text fontSize="lg" fontWeight="bold" color="white">{symbol}</Text>
-      )}
+      </HStack>
+      <Skeleton isLoaded={!isLoading} rounded="md">
+        <Heading size="lg" color="whiteAlpha.900" noOfLines={1}>{amount}</Heading>
+      </Skeleton>
     </Flex>
   );
 }
@@ -46,157 +46,186 @@ function TokenAmountDisplay({ symbol, amount, isLoading }: { symbol: string, amo
 type Props = { pairAddress: `0x${string}`; onClose?: () => void };
 
 export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
-  // --- TOÀN BỘ LOGIC HOOKS VÀ STATE (Không thay đổi) ---
   const chainId = useChainId() ?? 31337;
-  const { address: user } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  const { address } = useAccount();
+  const { tokens } = useTokenList();
+  const { slippageTolerance, deadlineMinutes } = useSettings();
   const contracts = getContracts(chainId);
   const router = contracts?.QuantumSwapRouter as `0x${string}`;
+
   const [percentageToRemove, setPercentageToRemove] = useState<number>(25);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
-  const receipt = useWaitForTransactionReceipt({ hash: txHash });
-  useTransactionStatus({ isPending: receipt.isLoading, isSuccess: receipt.isSuccess, isError: receipt.isError, error: receipt.error, hash: txHash });
-  const { slippageTolerance, deadlineMinutes } = useSettings();
-  
-  // Read pair data using batched reads (pair does not implement multicall)
-  const pairReads = useReadContracts({
-    contracts: !user ? [] : [
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'balanceOf', args: [user] },
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'allowance', args: [user, router] },
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'totalSupply' },
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'getReserves' },
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'token0' },
-      { address: pairAddress, abi: pairAbi as Abi, functionName: 'token1' },
+
+  const reads = useReadContracts({
+    contracts: [
+      { address: pairAddress, abi: pairAbi as Abi, functionName: "token0" },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: "token1" },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: "getReserves" },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: "totalSupply" },
+      ...(address ? [
+        { address: pairAddress, abi: pairAbi as Abi, functionName: "balanceOf", args: [address] },
+        { address: pairAddress, abi: pairAbi as Abi, functionName: "allowance", args: [address, router] },
+      ] : []),
     ],
-    query: { enabled: !!user, refetchInterval: 4000 },
+    query: { enabled: Boolean(pairAddress) },
   });
 
-  const [lpTokenBalance, allowance, totalSupply, reserves, token0, token1] = useMemo(() => {
-    const results = pairReads.data?.map((r) => r.result) ?? [];
-    const bal = (results[0] as bigint) ?? 0n;
-    const allow = (results[1] as bigint) ?? 0n;
-    const ts = (results[2] as bigint) ?? 0n;
-    const res = (results[3] as [bigint, bigint, number]) ?? [0n, 0n, 0];
-    const t0 = results[4] as `0x${string}` | undefined;
-    const t1 = results[5] as `0x${string}` | undefined;
-    return [bal, allow, ts, res, t0, t1] as const;
-  }, [pairReads.data]);
+  const token0 = reads.data?.[0]?.result as `0x${string}` | undefined;
+  const token1 = reads.data?.[1]?.result as `0x${string}` | undefined;
+  const reserves = reads.data?.[2]?.result as [bigint, bigint, number] | undefined;
+  const totalSupplyRaw = reads.data?.[3]?.result as bigint | undefined;
+  const lpBalanceRaw = reads.data?.[4]?.result as bigint | undefined;
+  const allowanceRaw = reads.data?.[5]?.result as bigint | undefined;
+  const totalSupply = totalSupplyRaw ?? 0n;
+  const lpBalance = lpBalanceRaw ?? 0n;
+  const allowance = allowanceRaw ?? 0n;
 
-  // Minimal ERC20 ABI for symbol/decimals
-  const ERC20_META = [
-    { name: 'symbol', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
-    { name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
-  ] as const;
+  const t0Meta = token0 ? tokens.find(t => t.address.toLowerCase() === token0.toLowerCase()) : undefined;
+  const t1Meta = token1 ? tokens.find(t => t.address.toLowerCase() === token1.toLowerCase()) : undefined;
+  const symbol0 = t0Meta?.symbol ?? "TKN0";
+  const symbol1 = t1Meta?.symbol ?? "TKN1";
+  const decimals0 = t0Meta?.decimals ?? 18;
+  const decimals1 = t1Meta?.decimals ?? 18;
+  const logo0 = t0Meta?.logoURI;
+  const logo1 = t1Meta?.logoURI;
 
-  const tokenMetaReads = useReadContracts({
-    contracts: token0 && token1 ? [
-      { address: token0, abi: ERC20_META as unknown as Abi, functionName: 'symbol' },
-      { address: token0, abi: ERC20_META as unknown as Abi, functionName: 'decimals' },
-      { address: token1, abi: ERC20_META as unknown as Abi, functionName: 'symbol' },
-      { address: token1, abi: ERC20_META as unknown as Abi, functionName: 'decimals' },
-    ] : [],
-    query: { enabled: !!token0 && !!token1 },
-  });
-
-  const [symbol0, decimals0, symbol1, decimals1] = useMemo(() => {
-    const r = tokenMetaReads.data?.map((x) => x.result) ?? [];
-    return [
-      (r[0] as string) ?? 'TKN0',
-      Number((r[1] as number) ?? 18),
-      (r[2] as string) ?? 'TKN1',
-      Number((r[3] as number) ?? 18),
-    ] as const;
-  }, [tokenMetaReads.data]);
-  
-  const [reserve0, reserve1] = ((reserves as unknown as [bigint, bigint, number])?.slice?.(0, 2) as [bigint, bigint]) ?? [0n, 0n];
-
-  const amountLpToBurn = (lpTokenBalance * BigInt(percentageToRemove)) / 100n;
+  const amountLpToBurn = lpBalance * BigInt(percentageToRemove) / 100n;
+  const reserve0 = reserves?.[0] ?? 0n;
+  const reserve1 = reserves?.[1] ?? 0n;
+  // Integer on-chain estimate (may floor to 0 for very small shares)
   const amount0ToReceive = totalSupply > 0n ? (reserve0 * amountLpToBurn) / totalSupply : 0n;
   const amount1ToReceive = totalSupply > 0n ? (reserve1 * amountLpToBurn) / totalSupply : 0n;
-  const showEstimates = amountLpToBurn > 0n && (reserve0 > 0n || reserve1 > 0n);
 
-  const needsApproval = amountLpToBurn > 0n && allowance < amountLpToBurn;
+  // Float estimate for UI to avoid floor-to-zero effect on very small shares
+  const reserve0Float = Number(formatUnits(reserve0 ?? 0n, decimals0));
+  const reserve1Float = Number(formatUnits(reserve1 ?? 0n, decimals1));
+  const shareFloat = totalSupply > 0n ? (Number(amountLpToBurn) / Number(totalSupply)) : 0;
+  const est0Float = reserve0Float * shareFloat;
+  const est1Float = reserve1Float * shareFloat;
+  const amount0Display = (Number(formatUnits(amount0ToReceive, decimals0)) || est0Float).toLocaleString(undefined, { maximumFractionDigits: 6 });
+  const amount1Display = (Number(formatUnits(amount1ToReceive, decimals1)) || est1Float).toLocaleString(undefined, { maximumFractionDigits: 6 });
 
-  async function onApprove() { const hash = await writeContractAsync({ address: pairAddress, abi: pairAbi as Abi, functionName: "approve", args: [router, amountLpToBurn] }); setTxHash(hash); }
-  async function onRemove() {
-    if (!token0 || !token1) return;
-    const bps = BigInt(Math.floor(slippageTolerance * 100));
-    const denom = 10000n;
-    const min0 = (amount0ToReceive * (denom - bps)) / denom;
-    const min1 = (amount1ToReceive * (denom - bps)) / denom;
-    const deadline = BigInt(Math.floor(Date.now() / 1000)) + BigInt(deadlineMinutes) * 60n;
-    const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "removeLiquidity", args: [token0, token1, amountLpToBurn, min0, min1, user!, deadline] });
-    setTxHash(hash);
+  const hasData = Boolean(reserves && totalSupplyRaw !== undefined);
+  const showEstimates = true;
+  const isLoadingData = reads.isLoading;
+  const isLoadingPairOnly = reads.isLoading;
+  const needsApproval = allowance < amountLpToBurn;
+
+  const { writeContractAsync } = useWriteContract();
+  const receipt = useWaitForTransactionReceipt({ hash: txHash });
+  useTransactionStatus({ isPending: receipt.isLoading, isSuccess: receipt.isSuccess, isError: receipt.isError, error: receipt.error, hash: txHash });
+
+  async function onApprove() {
+    if (!pairAddress || amountLpToBurn === 0n) return;
+    try {
+      const hash = await writeContractAsync({ address: pairAddress, abi: pairAbi as Abi, functionName: "approve", args: [router, amountLpToBurn] });
+      setTxHash(hash);
+    } catch {}
   }
 
-  const isLoadingData = pairReads.isLoading || tokenMetaReads.isLoading;
-  const isLoadingPairOnly = pairReads.isLoading;
+  async function onRemove() {
+    if (!token0 || !token1 || amountLpToBurn === 0n || !address) return;
+    try {
+      const bps = Math.floor(slippageTolerance * 100);
+      const denom = 10000n;
+      const min0 = (amount0ToReceive * (denom - BigInt(bps))) / denom;
+      const min1 = (amount1ToReceive * (denom - BigInt(bps))) / denom;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + deadlineMinutes * 60);
+      const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "removeLiquidity", args: [token0, token1, amountLpToBurn, min0, min1, address, deadline] });
+      setTxHash(hash);
+    } catch {}
+  }
 
-  // --- GIAO DIỆN ĐÃ ĐƯỢC THIẾT KẾ LẠI ---
   return (
-    <VStack align="stretch" gap={5}>
-      <VStack gap={3}>
-        <Heading size="2xl" color="white">{percentageToRemove}%</Heading>
-        
-        <Box position="relative" px={1}>
-          <Global styles={css`
-            .qs-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 9999px; background: linear-gradient(90deg, #0052FF 0%, #00D1B2 100%); outline: none; opacity: 0.9; transition: opacity 0.2s; }
-            .qs-range:hover { opacity: 1; }
-            .qs-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #0f1928; border: 2px solid #00FFC2; box-shadow: 0 0 12px rgba(0,255,194,0.5); cursor: pointer; margin-top: -6px; }
-            .qs-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #0f1928; border: 2px solid #00FFC2; box-shadow: 0 0 12px rgba(0,255,194,0.5); cursor: pointer; }
-          `} />
-          <input
-            className="qs-range"
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={percentageToRemove}
-            onChange={(e) => setPercentageToRemove(Number(e.target.value))}
-          />
-        </Box>
-        
-        <HStack w="full" justify="space-between">
-          {[25, 50, 75, 100].map(val => (
-            <Button key={val} size="sm" variant="ghost" color="whiteAlpha.600" _hover={{ bg: 'whiteAlpha.100', color: 'white' }} onClick={() => setPercentageToRemove(val)}>{val}%</Button>
-          ))}
+    <Box w={{ base: "100%", md: "560px" }} p={{ base: 5, md: 6 }} bg="rgba(23, 35, 53, 0.75)" backdropFilter="blur(15px)" border="1px solid" borderColor="rgba(255, 255, 255, 0.05)" rounded="2xl" boxShadow="0 10px 30px rgba(0,0,0,0.3)">
+      <VStack align="stretch" spacing={6}>
+        <VStack align="flex-start" spacing={1}>
+          <Heading size="lg" color="whiteAlpha.900">Remove Liquidity</Heading>
+          <Skeleton isLoaded={!isLoadingData} rounded="md">
+            <Text color="whiteAlpha.600" fontSize="sm">Pair: {symbol0} / {symbol1}</Text>
+          </Skeleton>
+        </VStack>
+
+        <Box h="1px" bg="whiteAlpha.200" />
+
+        <VStack spacing={3}>
+          <Heading size="2xl" color="white">{percentageToRemove}%</Heading>
+          <Box position="relative" px={1} w="full">
+            <Box
+              as="input"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={percentageToRemove}
+              onChange={(e: any) => setPercentageToRemove(Number(e.target.value))}
+              w="100%"
+              sx={{
+                WebkitAppearance: 'none',
+                appearance: 'none',
+                height: '6px',
+                borderRadius: '9999px',
+                background: 'linear-gradient(90deg, #0052FF 0%, #00D1B2 100%)',
+                outline: 'none',
+                opacity: 0.9,
+                transition: 'opacity 0.2s',
+                '&:hover': { opacity: 1 },
+                '::-webkit-slider-thumb': {
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  background: '#0f1928',
+                  border: '2px solid #00FFC2',
+                  boxShadow: '0 0 12px rgba(0,255,194,0.5)',
+                  cursor: 'pointer',
+                  marginTop: '-6px',
+                },
+                '::-moz-range-thumb': {
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  background: '#0f1928',
+                  border: '2px solid #00FFC2',
+                  boxShadow: '0 0 12px rgba(0,255,194,0.5)',
+                  cursor: 'pointer',
+                },
+                '::-ms-thumb': {
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  background: '#0f1928',
+                  border: '2px solid #00FFC2',
+                  boxShadow: '0 0 12px rgba(0,255,194,0.5)',
+                  cursor: 'pointer',
+                },
+              }}
+            />
+          </Box>
+          <HStack w="full" justify="space-between">
+            {[25, 50, 75, 100].map(val => (<Button key={val} size="sm" variant="ghost" color="whiteAlpha.600" _hover={{ bg: 'whiteAlpha.100', color: 'white' }} onClick={() => setPercentageToRemove(val)}>{val}%</Button>))}
+          </HStack>
+        </VStack>
+
+        <VStack p={4} bg="blackAlpha.400" rounded="xl" border="1px solid" borderColor="rgba(255, 255, 255, 0.08)" spacing={4} align="stretch">
+          <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
+          <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={false} />
+          <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={false} />
+        </VStack>
+
+        <VStack spacing={2} align="stretch">
+          <InfoRow label="Your LP token balance" value={isLoadingPairOnly ? <Skeleton rounded="md" h="20px" w="100px" /> : formatUnits(lpBalance, 18)} />
+          <InfoRow label="LP tokens to remove" value={isLoadingPairOnly ? <Skeleton rounded="md" h="20px" w="100px" /> : formatUnits(amountLpToBurn, 18)} />
+        </VStack>
+
+        <HStack pt={2}>
+          {onClose && <Button variant="outline" borderColor="whiteAlpha.300" color="whiteAlpha.800" _hover={{ bg: 'whiteAlpha.100' }} onClick={onClose} flex={1}>Cancel</Button>}
+          <GradientButton onClick={needsApproval ? onApprove : onRemove} isLoading={receipt.isLoading} disabled={amountLpToBurn === 0n || !address} flex={2}>
+            {needsApproval ? "Approve" : "Remove"}
+          </GradientButton>
         </HStack>
       </VStack>
-
-      <VStack
-        p={4}
-        bg="blackAlpha.300"
-        rounded="xl"
-        border="1px solid"
-        borderColor="rgba(255, 255, 255, 0.05)"
-        gap={3}
-        align="stretch"
-      >
-        <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
-        <TokenAmountDisplay symbol={symbol0} amount={showEstimates ? formatUnits(amount0ToReceive, decimals0) : "0"} isLoading={isLoadingData} />
-        <TokenAmountDisplay symbol={symbol1} amount={showEstimates ? formatUnits(amount1ToReceive, decimals1) : "0"} isLoading={isLoadingData} />
-      </VStack>
-      
-      <VStack gap={2} align="stretch">
-        <InfoRow label="Your LP token balance" value={
-          isLoadingPairOnly ? <Skeleton rounded="md"><Box h="20px" w="100px" /></Skeleton> : formatUnits(lpTokenBalance, 18)
-        }/>
-        <InfoRow label="LP tokens to remove" value={
-          isLoadingPairOnly ? <Skeleton rounded="md"><Box h="20px" w="100px" /></Skeleton> : formatUnits(amountLpToBurn, 18)
-        }/>
-      </VStack>
-
-      <HStack pt={2}>
-        {onClose && <Button variant="outline" borderColor="whiteAlpha.300" color="whiteAlpha.800" _hover={{ bg: 'whiteAlpha.100' }} onClick={onClose} flex={1}>Cancel</Button>}
-        <GradientButton
-          onClick={needsApproval ? onApprove : onRemove}
-          loading={receipt.isLoading}
-          disabled={amountLpToBurn === 0n}
-          flex={2}
-        >
-          {needsApproval ? "Approve" : "Remove"}
-        </GradientButton>
-      </HStack>
-    </VStack>
+    </Box>
   );
 }

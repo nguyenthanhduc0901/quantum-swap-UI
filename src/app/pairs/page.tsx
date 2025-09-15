@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Container, Heading, VStack, Grid, GridItem, Text, Box, HStack, Skeleton, Input, Button, Image } from "@chakra-ui/react";
+import { useMemo, useState, Suspense } from "react";
+import { Container, Heading, VStack, Grid, GridItem, Text, Box, HStack, Skeleton, Input, Button, Image, Spinner } from "@chakra-ui/react";
 import { useChainId, useReadContract, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
 import { quantumSwapFactoryAbi as factoryAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts } from "@/constants/addresses";
 import NextLink from "next/link";
 import { useTokenList } from "@/hooks/useTokenList";
+import { GradientButton } from "@/components/ui/GradientButton";
 
 const ERC20_META = [
   { name: "symbol", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
@@ -47,14 +48,14 @@ export default function PairsPage() {
     contracts: pairAddresses.flatMap((_, i) => {
       const t0 = pairReads.data?.[i*3]?.result as `0x${string}` | undefined;
       const t1 = pairReads.data?.[i*3+1]?.result as `0x${string}` | undefined;
-      if (!t0 || !t1) return [] as any[];
+      if (!t0 || !t1) return [] as [];
       return [
         { address: t0, abi: ERC20_META as Abi, functionName: "symbol" as const },
         { address: t0, abi: ERC20_META as Abi, functionName: "decimals" as const },
         { address: t1, abi: ERC20_META as Abi, functionName: "symbol" as const },
         { address: t1, abi: ERC20_META as Abi, functionName: "decimals" as const },
       ];
-    }) as any,
+    }),
     query: { enabled: pairReads.data != null },
   });
 
@@ -98,14 +99,22 @@ export default function PairsPage() {
   const isLoading = lenRead.isLoading || pairsRes.isLoading || pairReads.isLoading || tokenMetaReads.isLoading;
 
   return (
-    <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
-      <VStack align="stretch" gap={6}>
-        <Heading size="lg" color="white">Pairs</Heading>
-        <HStack gap={3}>
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search symbol or pair address" bg="blackAlpha.400" borderColor="rgba(255,255,255,0.08)" color="white" />
-          <Button onClick={() => setQuery("")}>Clear</Button>
+    <Suspense fallback={
+      <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
+        <HStack gap={3} bg="rgba(23,35,53,0.6)" border="1px solid" borderColor="rgba(255,255,255,0.08)" rounded="xl" p={4} backdropFilter="blur(10px)">
+          <Spinner color="#00D1B2" />
+          <Text color="whiteAlpha.900" fontWeight="semibold">Loading…</Text>
         </HStack>
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={4}>
+      </Container>
+    }>
+      <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
+        <VStack align="stretch" gap={6}>
+          <Heading size="lg" color="white">Pairs</Heading>
+          <HStack gap={3}>
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search symbol or pair address" bg="blackAlpha.400" borderColor="rgba(255,255,255,0.08)" color="white" />
+            <Button onClick={() => setQuery("")}>Clear</Button>
+          </HStack>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={4}>
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <GridItem key={i}>
@@ -132,12 +141,8 @@ export default function PairsPage() {
                     </VStack>
                   </HStack>
                   <HStack justify="flex-end" mt={3} gap={2}>
-                    <NextLink href={`/pair/${it.pair}`}>
-                      <Button as="span" size="sm" bg="whiteAlpha.200" _hover={{ bg: "whiteAlpha.300" }} color="white">View</Button>
-                    </NextLink>
-                    <NextLink href={`/pool/remove/${it.pair}`}>
-                      <Button as="span" size="sm" variant="outline" borderColor="whiteAlpha.300" color="white">Manage</Button>
-                    </NextLink>
+                    <GradientButton href={`/pair/${it.pair}`} size="sm" hoverOnly>View</GradientButton>
+                    <GradientButton href={`/pool/remove/${it.pair}`} size="sm" hoverOnly>Manage</GradientButton>
                   </HStack>
                 </Box>
               </GridItem>
@@ -146,6 +151,7 @@ export default function PairsPage() {
         </Grid>
       </VStack>
     </Container>
+    </Suspense>
   );
 }
 
@@ -160,7 +166,7 @@ function fmt(n?: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
 }
 
-function pairName(it: any) {
+function pairName(it: { symbol0?: string; token0?: string; symbol1?: string; token1?: string }) {
   const a = it.symbol0 ?? short(it.token0);
   const b = it.symbol1 ?? short(it.token1);
   return `${a} / ${b}`;

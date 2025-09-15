@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useChainId } from "wagmi";
 import type { TokenInfo } from "@/constants/tokens";
 import { getDefaultTokens } from "@/constants/tokens";
+import generatedLocalJson from "@/constants/generated/addresses.local.json" assert { type: "json" };
 
 type RawList = {
   name: string;
@@ -19,17 +20,10 @@ type RawList = {
 
 const UNISWAP_LIST_URL = "https://gateway.pinata.cloud/ipfs/QmaQMXs34s321d4c2g22e1a38122pyc42e423z42m1";
 
-let cachedByChain: Record<number, TokenInfo[] | undefined> = {};
+const cachedByChain: Record<number, TokenInfo[] | undefined> = {};
 let fetchInFlight = false;
-
-function generatedLocal(): any | undefined {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require("@/constants/generated/addresses.local.json");
-  } catch {
-    return undefined;
-  }
-}
+type GenTok = { address: string; symbol: string; name: string; decimals: number; logoURI?: string };
+const generatedLocal: Record<number, { tokens: GenTok[] }> | undefined = generatedLocalJson as unknown as Record<number, { tokens: GenTok[] }>;
 
 export function useTokenList() {
   const chainId = useChainId() ?? 31337;
@@ -49,7 +43,7 @@ export function useTokenList() {
         setIsLoading(true);
         const res = await fetch(UNISWAP_LIST_URL, { cache: "no-store" });
         const json = (await res.json()) as RawList;
-        const remote = (json.tokens || [])
+        const remote: TokenInfo[] = (json.tokens || [])
           .filter((t) => t.chainId === chainId)
           .map((t) => ({
             address: t.address as `0x${string}`,
@@ -57,15 +51,16 @@ export function useTokenList() {
             name: t.name,
             decimals: t.decimals,
             logoURI: t.logoURI,
-          } satisfies TokenInfo));
+          }));
         // Fallback tokens and generated local tokens
         const fallback = getDefaultTokens(chainId);
-        const gen = (generatedLocal()?.[chainId]?.tokens || []) as Array<{ address: string; symbol: string; name: string; decimals: number; logoURI?: string }>;
+        const genRaw = (generatedLocal?.[chainId]?.tokens || []) as Array<{ address: string; symbol: string; name: string; decimals: number; logoURI?: string }>;
+        const genTokens: TokenInfo[] = genRaw.map((t) => ({ address: t.address as `0x${string}`, symbol: t.symbol, name: t.name, decimals: t.decimals, logoURI: t.logoURI }));
         // Merge with user custom tokens from localStorage
         const customKey = `qs.customTokens.${chainId}`;
         const customRaw = typeof window !== "undefined" ? window.localStorage.getItem(customKey) : null;
-        const custom: TokenInfo[] = customRaw ? JSON.parse(customRaw) : [];
-        const merged = dedupeByAddress([...custom, ...fallback, ...gen, ...remote]);
+        const custom: TokenInfo[] = (customRaw ? JSON.parse(customRaw) : []).map((t: GenTok) => ({ ...t, address: t.address as `0x${string}` }));
+        const merged = dedupeByAddress([...custom, ...fallback, ...genTokens, ...remote]);
         cachedByChain[chainId] = merged;
         if (mounted) setList(merged);
       } catch {
@@ -73,9 +68,10 @@ export function useTokenList() {
         const fallback = getDefaultTokens(chainId);
         const customKey = `qs.customTokens.${chainId}`;
         const customRaw = typeof window !== "undefined" ? window.localStorage.getItem(customKey) : null;
-        const custom: TokenInfo[] = customRaw ? JSON.parse(customRaw) : [];
-        const gen = (generatedLocal()?.[chainId]?.tokens || []) as Array<{ address: string; symbol: string; name: string; decimals: number; logoURI?: string }>;
-        const merged = dedupeByAddress([...custom, ...fallback, ...gen]);
+        const custom: TokenInfo[] = (customRaw ? JSON.parse(customRaw) : []).map((t: GenTok) => ({ ...t, address: t.address as `0x${string}` }));
+        const genRaw = (generatedLocal?.[chainId]?.tokens || []) as Array<{ address: string; symbol: string; name: string; decimals: number; logoURI?: string }>;
+        const genTokens: TokenInfo[] = genRaw.map((t) => ({ address: t.address as `0x${string}`, symbol: t.symbol, name: t.name, decimals: t.decimals, logoURI: t.logoURI }));
+        const merged = dedupeByAddress([...custom, ...fallback, ...genTokens]);
         cachedByChain[chainId] = merged;
         if (mounted) setList(merged);
       } finally {

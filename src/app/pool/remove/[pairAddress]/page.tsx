@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/app/pool/remove/[pairAddress]/page.tsx (KHÔNG CẦN SỬA)
+
 "use client";
 import React from "react";
 import {
@@ -8,10 +9,9 @@ import {
   Heading,
   Text,
   Link as ChakraLink,
-  Button,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
-import { FiArrowLeft } from "react-icons/fi"; // Icon quay lại
+import { FiArrowLeft } from "react-icons/fi"; 
 import { RemoveLiquidityComponent } from "../../../../components/RemoveLiquidityComponent";
 
 type PageProps = { params: Promise<{ pairAddress: `0x${string}` }> };
@@ -22,10 +22,8 @@ export default function RemoveLiquidityPage({ params }: PageProps) {
 
   return (
     <Container maxW="container.lg" py={{ base: 8, md: 12 }}>
-      <VStack align="stretch" gap={8}>
-        {/* === THÊM MỚI: HEADER CỦA TRANG === */}
-        <VStack align="flex-start" gap={4}>
-          {/* Nút quay lại để cải thiện điều hướng */}
+      <VStack align="stretch" spacing={8}>
+        <VStack align="flex-start" spacing={4}>
           <ChakraLink
             as={NextLink}
             href="/pool"
@@ -39,7 +37,6 @@ export default function RemoveLiquidityPage({ params }: PageProps) {
             Back to All Positions
           </ChakraLink>
 
-          {/* Tiêu đề và mô tả của trang */}
           <Heading as="h1" size="2xl" color="whiteAlpha.900">
             Manage Liquidity
           </Heading>
@@ -48,10 +45,7 @@ export default function RemoveLiquidityPage({ params }: PageProps) {
           </Text>
         </VStack>
 
-        {/* Phần nội dung chính */}
         <Flex justify="center">
-          {/* Component này đã được thiết kế đẹp, chỉ cần đặt nó vào đúng vị trí */}
-          {/* Loại bỏ prop onClose vì nút "Back" đã xử lý việc điều hướng */}
           <RemoveLiquidityComponent pairAddress={pairAddress as `0x${string}`} />
         </Flex>
       </VStack>

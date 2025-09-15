@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { Container, Grid, GridItem, Box, Heading } from "@chakra-ui/react";
+import { Container, Grid, GridItem, Box, Heading, Spinner, HStack, Text } from "@chakra-ui/react";
 import { SwapComponent } from "../../components/SwapComponent";
 import type { TokenInfo } from "@/constants/tokens";
 
@@ -35,7 +35,14 @@ export default function SwapPage() {
             <ChartPanel inputToken={inputToken} outputToken={outputToken} />
           </GridItem>
           <GridItem display="flex" justifyContent={{ base: "center", lg: "flex-end" }}>
-            <SwapComponent onTokenChange={handleTokensChange} />
+            <Suspense fallback={
+              <HStack gap={3} bg="rgba(23,35,53,0.6)" border="1px solid" borderColor="rgba(255,255,255,0.08)" rounded="xl" p={4} backdropFilter="blur(10px)">
+                <Spinner color="#00D1B2" />
+                <Text color="whiteAlpha.900" fontWeight="semibold">Loading…</Text>
+              </HStack>
+            }>
+              <SwapComponent onTokenChange={handleTokensChange} />
+            </Suspense>
           </GridItem>
         </Grid>
       </Container>

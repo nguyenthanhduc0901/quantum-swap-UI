@@ -34,8 +34,8 @@ export function GradientButton(props: Props) {
       }}
       _active={{ transform: "translateY(0)", boxShadow: "0 4px 10px rgba(0, 209, 178, 0.20)" }}
       _focusVisible={{ boxShadow: "0 0 0 0" }}
-      as={props.href ? (NextLink as any) : undefined}
-      href={props.href as any}
+      as={props.href ? NextLink : undefined}
+      href={props.href}
       {...rest}
     >
       {children}

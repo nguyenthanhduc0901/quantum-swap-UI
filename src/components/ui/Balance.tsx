@@ -21,12 +21,9 @@ export function Balance({ tokenAddress, textColor = "whiteAlpha.600" }: Props) {
     query: { enabled: Boolean(address), refetchOnWindowFocus: true },
   });
 
-  // Tránh hydration mismatch: luôn hiển thị skeleton đến khi đã mounted phía client
-  if (!mounted || isLoading) {
-    return (
-      <Skeleton height="18px" width="120px" rounded="md" />
-    );
-  }
+  // Avoid hydration mismatch: render nothing until mounted, then show skeleton while loading
+  if (!mounted) return null;
+  if (isLoading) return <Skeleton height="18px" width="120px" rounded="md" />;
 
   // 2. Cập nhật màu sắc cho trạng thái không có dữ liệu
   if (!data) {

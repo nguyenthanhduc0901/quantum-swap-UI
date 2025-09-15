@@ -1,0 +1,112 @@
+
+> frontend@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.2
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (195kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (194kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ✓ Compiled successfully in 20.0s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./src/app/pair/[address]/page.tsx
+17:9  Warning: 'chainId' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+92:117  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+111:117  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/pool/remove/[pairAddress]/page.tsx
+1:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any').
+11:3  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/portfolio/page.tsx
+106:9  Warning: '_wethUsdPrice' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+108:12  Warning: '_r0' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+108:17  Warning: '_r1' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+182:78  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+217:86  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/token/[address]/page.tsx
+4:30  Warning: 'HStack' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/AddLiquidityComponent.tsx
+3:52  Warning: 'IconButton' is defined but never used.  @typescript-eslint/no-unused-vars
+43:11  Warning: 'pairAddress' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+43:24  Warning: 'pairExists' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+43:36  Warning: 'reserves' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+43:46  Warning: 'estimatedAmountA' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+43:64  Warning: 'estimatedAmountB' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+66:254  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+67:254  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+78:14  Warning: 'e' is defined but never used.  @typescript-eslint/no-unused-vars
+88:6  Warning: React Hook useMemo has missing dependencies: 'onApproveA', 'onApproveB', and 'onSupply'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+91:9  Warning: 'canSubmit' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ChartPanel.tsx
+88:6  Warning: React Hook useEffect has missing dependencies: 'inputToken' and 'outputToken'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/RemoveLiquidityComponent.tsx
+3:10  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+5:45  Warning: 'Spinner' is defined but never used.  @typescript-eslint/no-unused-vars
+12:34  Warning: 'useReadContract' is defined but never used.  @typescript-eslint/no-unused-vars
+15:29  Warning: 'QuantumSwapAddresses' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/SwapComponent.tsx
+5:49  Warning: 'HStack' is defined but never used.  @typescript-eslint/no-unused-vars
+5:57  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+8:35  Warning: 'FiAlertTriangle' is defined but never used.  @typescript-eslint/no-unused-vars
+16:102  Warning: 'factoryAbi' is defined but never used.  @typescript-eslint/no-unused-vars
+17:29  Warning: 'QuantumSwapAddresses' is defined but never used.  @typescript-eslint/no-unused-vars
+49:9  Warning: 'weth' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+63:17  Warning: 'isDetailsOpen' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+63:42  Warning: 'onToggleDetails' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+64:17  Warning: 'isConfirmOpen' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+64:40  Warning: 'onOpenConfirm' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+64:64  Warning: 'onCloseConfirm' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+65:9  Warning: 'publicClient' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/YourLiquidityComponent.tsx
+5:3  Warning: 'Box' is defined but never used.  @typescript-eslint/no-unused-vars
+5:8  Warning: 'Flex' is defined but never used.  @typescript-eslint/no-unused-vars
+5:14  Warning: 'Spinner' is defined but never used.  @typescript-eslint/no-unused-vars
+5:56  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/Footer.tsx
+124:35  Warning: 'ariaLabel' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/TopProgress.tsx
+20:17  Warning: React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

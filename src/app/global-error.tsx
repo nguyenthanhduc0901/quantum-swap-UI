@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Button, Flex, Heading, Text, VStack } from "@chakra-ui/react";
+import { Button, Flex, Heading, Text, VStack } from "@chakra-ui/react";
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
