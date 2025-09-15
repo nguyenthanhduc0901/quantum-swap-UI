@@ -19,11 +19,10 @@ type PageProps = { params: Promise<{ pairAddress: `0x${string}` }> };
 export default function RemoveLiquidityPage({ params }: PageProps) {
   const resolved = React.use(params);
   const pairAddress = resolved?.pairAddress ?? "0x0000000000000000000000000000000000000000";
-
   return (
     <Container maxW="container.lg" py={{ base: 8, md: 12 }}>
-      <VStack align="stretch" spacing={8}>
-        <VStack align="flex-start" spacing={4}>
+      <VStack align="stretch" gap={8}>
+        <VStack align="flex-start" gap={4}>
           <ChakraLink
             as={NextLink}
             href="/pool"

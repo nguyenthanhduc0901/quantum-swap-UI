@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   Box, Flex, Heading, Text, HStack, Button, Skeleton,
-  VStack, Image
+  VStack, Image, chakra
 } from "@chakra-ui/react";
 import { GradientButton } from "@/components/ui/GradientButton";
 import type { Abi } from "viem";
@@ -33,12 +33,14 @@ function TokenAmountDisplay({ symbol, amount, logo, isLoading }: { symbol: strin
   return (
     <Flex justify="space-between" align="center" w="full">
       <HStack>
-        <Image src={logo} boxSize="28px" rounded="full" fallback={<Box boxSize="28px" rounded="full" bg="whiteAlpha.300" />} />
+        <Image src={logo} boxSize="28px" rounded="full" />
         <Text fontSize="lg" fontWeight="bold" color="white">{symbol}</Text>
       </HStack>
-      <Skeleton isLoaded={!isLoading} rounded="md">
-        <Heading size="lg" color="whiteAlpha.900" noOfLines={1}>{amount}</Heading>
-      </Skeleton>
+      {isLoading ? (
+        <Box h="32px" w="140px" bg="whiteAlpha.200" rounded="md" />
+      ) : (
+        <Heading size="lg" color="whiteAlpha.900">{amount}</Heading>
+      )}
     </Flex>
   );
 }
@@ -123,14 +125,23 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const est1Float = reserve1Float * shareFloat;
   const a0Num = Number(formatUnits(amount0ToReceive, decimals0));
   const a1Num = Number(formatUnits(amount1ToReceive, decimals1));
-  const amount0Display = ((a0Num > 0 ? a0Num : est0Float) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
-  const amount1Display = ((a1Num > 0 ? a1Num : est1Float) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
+  function formatEstimatedAmount(exact: number, estimate: number): string {
+    const val = exact > 0 ? exact : estimate;
+    if (!isFinite(val)) return "-";
+    if (val > 0 && val < 1e-6) return "<0.000001";
+    return val.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  }
+  const amount0Display = formatEstimatedAmount(a0Num, est0Float);
+  const amount1Display = formatEstimatedAmount(a1Num, est1Float);
+  const res0Display = (reserve0Float || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
+  const res1Display = (reserve1Float || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
 
   const hasData = Boolean(reserves && totalSupplyRaw !== undefined);
   const showEstimates = true;
   const isLoadingMeta = metaReads.isLoading;
   const isLoadingData = reads.isLoading || isLoadingMeta;
   const isLoadingPairOnly = reads.isLoading;
+  const isLoadingAmounts = reads.isLoading || (reads as any).isFetching; // amounts should not wait for metadata
   const needsApproval = allowance < amountLpToBurn;
 
   const { writeContractAsync } = useWriteContract();
@@ -160,21 +171,22 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
 
   return (
     <Box w={{ base: "100%", md: "560px" }} p={{ base: 5, md: 6 }} bg="rgba(23, 35, 53, 0.75)" backdropFilter="blur(15px)" border="1px solid" borderColor="rgba(255, 255, 255, 0.05)" rounded="2xl" boxShadow="0 10px 30px rgba(0,0,0,0.3)">
-      <VStack align="stretch" spacing={6}>
-        <VStack align="flex-start" spacing={1}>
+      <VStack align="stretch" gap={6}>
+        <VStack align="flex-start" gap={1}>
           <Heading size="lg" color="whiteAlpha.900">Remove Liquidity</Heading>
-          <Skeleton isLoaded={!isLoadingData} rounded="md">
+          {isLoadingData ? (
+            <Box h="20px" w="120px" bg="whiteAlpha.200" rounded="md" />
+          ) : (
             <Text color="whiteAlpha.600" fontSize="sm">Pair: {symbol0} / {symbol1}</Text>
-          </Skeleton>
+          )}
         </VStack>
 
         <Box h="1px" bg="whiteAlpha.200" />
 
-        <VStack spacing={3}>
+        <VStack gap={3}>
           <Heading size="2xl" color="white">{percentageToRemove}%</Heading>
           <Box position="relative" px={1} w="full">
-            <Box
-              as="input"
+            <chakra.input
               type="range"
               min={0}
               max={100}
@@ -182,7 +194,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
               value={percentageToRemove}
               onChange={(e: any) => setPercentageToRemove(Number(e.target.value))}
               w="100%"
-              sx={{
+              css={{
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 height: '6px',
@@ -230,20 +242,34 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
           </HStack>
         </VStack>
 
-        <VStack p={4} bg="blackAlpha.400" rounded="xl" border="1px solid" borderColor="rgba(255, 255, 255, 0.08)" spacing={4} align="stretch">
-          <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
-          <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={isLoadingData} />
-          <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={isLoadingData} />
+        <VStack p={4} bg="blackAlpha.300" rounded="xl" border="1px solid" borderColor="rgba(255, 255, 255, 0.08)" gap={3} align="stretch">
+          <Text fontWeight="semibold" color="whiteAlpha.800">Pool Reserves</Text>
+          <HStack justify="space-between">
+            <Box>
+              <Text color="whiteAlpha.700" fontSize="sm">Reserve0</Text>
+              <Text color="white" fontWeight="bold">{res0Display} {symbol0}</Text>
+            </Box>
+            <Box>
+              <Text color="whiteAlpha.700" fontSize="sm">Reserve1</Text>
+              <Text color="white" fontWeight="bold">{res1Display} {symbol1}</Text>
+            </Box>
+          </HStack>
         </VStack>
 
-        <VStack spacing={2} align="stretch">
+        <VStack p={4} bg="blackAlpha.400" rounded="xl" border="1px solid" borderColor="rgba(255, 255, 255, 0.08)" gap={4} align="stretch">
+          <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
+          <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={isLoadingAmounts} />
+          <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={isLoadingAmounts} />
+        </VStack>
+
+        <VStack gap={2} align="stretch">
           <InfoRow label="Your LP token balance" value={isLoadingPairOnly ? <Skeleton rounded="md" h="20px" w="100px" /> : formatUnits(lpBalance, 18)} />
           <InfoRow label="LP tokens to remove" value={isLoadingPairOnly ? <Skeleton rounded="md" h="20px" w="100px" /> : formatUnits(amountLpToBurn, 18)} />
         </VStack>
 
         <HStack pt={2}>
           {onClose && <Button variant="outline" borderColor="whiteAlpha.300" color="whiteAlpha.800" _hover={{ bg: 'whiteAlpha.100' }} onClick={onClose} flex={1}>Cancel</Button>}
-          <GradientButton onClick={needsApproval ? onApprove : onRemove} isLoading={receipt.isLoading} disabled={amountLpToBurn === 0n || !address} flex={2}>
+          <GradientButton onClick={needsApproval ? onApprove : onRemove} loading={receipt.isLoading} disabled={amountLpToBurn === 0n || !address} flex={2}>
             {needsApproval ? "Approve" : "Remove"}
           </GradientButton>
         </HStack>
