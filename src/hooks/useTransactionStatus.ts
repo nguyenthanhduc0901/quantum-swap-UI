@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useAppToast } from "../contexts/ToastContext";
+// This hook now supports JSX descriptions via ToastContext
+import { useChainId } from "wagmi";
 
 type TxFlags = {
   isPending?: boolean;
@@ -11,59 +13,88 @@ type TxFlags = {
   hash?: string;
 };
 
+// --- THÊM MỚI: Helper để lấy URL của block explorer ---
+function getBlockExplorerLink(chainId: number, hash: string): string | undefined {
+  const explorers: Record<number, string> = {
+    1: "https://etherscan.io/tx/",       // Mainnet
+    11155111: "https://sepolia.etherscan.io/tx/", // Sepolia
+    5: "https://goerli.etherscan.io/tx/",     // Goerli
+    137: "https://polygonscan.com/tx/",   // Polygon
+    80001: "https://mumbai.polygonscan.com/tx/", // Mumbai
+    // Thêm các mạng khác nếu cần
+  };
+  return explorers[chainId] ? `${explorers[chainId]}${hash}` : undefined;
+}
+
+// --- HOOK ĐÃ ĐƯỢC THIẾT KẾ LẠI ---
 export function useTransactionStatus({ isPending, isSuccess, isError, error, hash }: TxFlags) {
   const toast = useAppToast();
+  const chainId = useChainId(); // Lấy chainId hiện tại
   const toastIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    // 1. Gộp logic vào một useEffect duy nhất
     if (isPending) {
-      toastIdRef.current = toast.push({ title: "Transaction submitted...", kind: "loading" });
-    }
-  }, [isPending, toast]);
-
-  useEffect(() => {
-    if (isSuccess) {
-      toast.update(toastIdRef.current as number, { title: "Transaction confirmed!", description: hash ? `Hash: ${hash}` : undefined, kind: "success" });
-    }
-  }, [isSuccess, hash, toast]);
-
-  useEffect(() => {
-    if (isError) {
+      // Chỉ tạo toast mới nếu chưa có
+      if (!toastIdRef.current) {
+        toastIdRef.current = toast.push({
+          title: "Transaction submitted...",
+          description: "Waiting for confirmation from the network.",
+          kind: "loading",
+        });
+      }
+    } else if (isSuccess && toastIdRef.current) {
+      // 2. Cập nhật toast thành công với liên kết explorer (cho phép JSX ở description)
+      const url = hash && chainId ? getBlockExplorerLink(chainId, hash) : undefined;
+      toast.update(toastIdRef.current, {
+        title: "Transaction Confirmed!",
+        description: url ? `View on Block Explorer: ${url}` : "Your transaction was successful.",
+        kind: "success",
+      });
+      toastIdRef.current = undefined; // Reset ref sau khi hoàn tất
+    } else if (isError && toastIdRef.current) {
+      // 3. Cập nhật toast lỗi với thông báo rõ ràng hơn
       const message = parseError(error);
-      toast.update(toastIdRef.current as number, { title: "Transaction failed", description: message, kind: "error" });
+      toast.update(toastIdRef.current, {
+        title: "Transaction Failed",
+        description: message,
+        kind: "error",
+      });
+      toastIdRef.current = undefined; // Reset ref sau khi hoàn tất
     }
-  }, [isError, error, toast]);
+  }, [isPending, isSuccess, isError, error, hash, toast, chainId]);
 }
 
+
+// --- HÀM PARSE ERROR ĐƯỢC CẢI TIẾN ---
 function parseError(err: unknown): string {
-  if (!err) return "Unknown error";
-  if (typeof err === "string") return err;
-  if (typeof err === "object" && err !== null) {
-    const withShort = err as { shortMessage?: unknown };
-    if (typeof withShort.shortMessage === "string") return withShort.shortMessage;
-    const withMsg = err as { message?: unknown };
-    if (typeof withMsg.message === "string") return withMsg.message;
-    // viem style error objects
-    const withMeta = err as { cause?: unknown; name?: unknown; details?: unknown; code?: unknown };
-    const parts: string[] = [];
-    if (typeof withMeta.name === "string") parts.push(withMeta.name);
-    if (typeof withMeta.code === "string") parts.push(`code: ${withMeta.code}`);
-    if (typeof withMeta.details === "string") parts.push(withMeta.details);
-    // unwrap cause recursively if possible
-    if (withMeta.cause && typeof withMeta.cause === "object") {
-      try {
-        const sub = parseError(withMeta.cause as unknown);
-        if (sub && sub !== "Unknown error") parts.push(sub);
-      } catch {}
+  if (!err) return "An unknown error occurred.";
+  
+  // Xử lý các lỗi phổ biến nhất trước
+  if (typeof err === 'object' && err !== null) {
+    if ('shortMessage' in err && typeof err.shortMessage === 'string') {
+      if (err.shortMessage.includes('UserRejectedRequestError')) {
+        return "Transaction rejected by user.";
+      }
+      if (err.shortMessage.includes('insufficient funds')) {
+        return "Insufficient funds for the transaction.";
+      }
+      return err.shortMessage;
     }
-    if (parts.length > 0) return parts.join(" | ");
-    try {
-      return JSON.stringify(err);
-    } catch {
-      return "Unknown error";
+    if ('message' in err && typeof err.message === 'string') {
+        if (err.message.includes('User rejected the request')) {
+            return "Transaction rejected by user.";
+        }
+        return err.message;
     }
   }
-  return "Unknown error";
+
+  // Giữ lại logic fallback chi tiết
+  if (typeof err === "string") return err;
+  try {
+    const str = JSON.stringify(err);
+    if (str !== "{}") return str;
+  } catch {}
+  
+  return "An unknown error occurred. Check the console for details.";
 }
-
-

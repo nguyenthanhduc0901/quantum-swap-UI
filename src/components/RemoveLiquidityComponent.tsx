@@ -1,198 +1,202 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Flex, Heading, Text, HStack, Button, Link as ChakraLink, Spinner, Skeleton } from "@chakra-ui/react";
+import {
+  Box, Flex, Heading, Text, HStack, Button, Spinner, Skeleton,
+  VStack,
+} from "@chakra-ui/react";
+import { Global, css } from "@emotion/react";
+import { GradientButton } from "./ui/GradientButton";
 import type { Abi } from "viem";
-import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { formatUnits } from "viem";
+import { useAccount, useChainId, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useTransactionStatus } from "../hooks/useTransactionStatus";
-import pairAbi from "../constants/abi/QuantumSwapPair.json";
-import routerAbi from "../constants/abi/QuantumSwapRouter.json";
+import { quantumSwapPairAbi as pairAbi, quantumSwapRouterAbi as routerAbi } from "../constants/abi/minimal";
 import { getContracts, type QuantumSwapAddresses } from "../constants/addresses";
-import NextLink from "next/link";
+import { useSettings } from "@/contexts/SettingsContext";
+
+// Component con để hiển thị thông tin
+function InfoRow({ label, value }: { label: string, value: React.ReactNode }) {
+  return (
+    <Flex justify="space-between" align="center">
+      <Text fontSize="sm" color="whiteAlpha.600">{label}</Text>
+      <Box fontSize="sm" fontWeight="medium" color="whiteAlpha.800">{value}</Box>
+    </Flex>
+  );
+}
+
+// Component con để hiển thị số lượng token nhận được
+function TokenAmountDisplay({ symbol, amount, isLoading }: { symbol: string, amount: string, isLoading: boolean }) {
+  return (
+    <Flex justify="space-between" align="center" w="full">
+      {isLoading ? (
+        <Skeleton rounded="md"><Box h="24px" w="80px" /></Skeleton>
+      ) : (
+        <Text fontSize="lg" fontWeight="medium" color="whiteAlpha.800">{amount}</Text>
+      )}
+      {isLoading ? (
+        <Skeleton rounded="md"><Box h="24px" w="80px" /></Skeleton>
+      ) : (
+        <Text fontSize="lg" fontWeight="bold" color="white">{symbol}</Text>
+      )}
+    </Flex>
+  );
+}
 
 type Props = { pairAddress: `0x${string}`; onClose?: () => void };
 
 export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
+  // --- TOÀN BỘ LOGIC HOOKS VÀ STATE (Không thay đổi) ---
   const chainId = useChainId() ?? 31337;
   const { address: user } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const contracts = getContracts(chainId) as QuantumSwapAddresses | undefined;
-  const router = (contracts?.QuantumSwapRouter ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  const contracts = getContracts(chainId);
+  const router = contracts?.QuantumSwapRouter as `0x${string}`;
+  const [percentageToRemove, setPercentageToRemove] = useState<number>(25);
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
+  const receipt = useWaitForTransactionReceipt({ hash: txHash });
+  useTransactionStatus({ isPending: receipt.isLoading, isSuccess: receipt.isSuccess, isError: receipt.isError, error: receipt.error, hash: txHash });
+  const { slippageTolerance, deadlineMinutes } = useSettings();
+  
+  // Read pair data using batched reads (pair does not implement multicall)
+  const pairReads = useReadContracts({
+    contracts: !user ? [] : [
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'balanceOf', args: [user] },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'allowance', args: [user, router] },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'totalSupply' },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'getReserves' },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'token0' },
+      { address: pairAddress, abi: pairAbi as Abi, functionName: 'token1' },
+    ],
+    query: { enabled: !!user, refetchInterval: 4000 },
+  });
 
-  const [percentageToRemove, setPercentageToRemove] = useState<number>(0);
-  const [lpTokenBalance, setLpTokenBalance] = useState<bigint>(0n);
-  const [totalSupply, setTotalSupply] = useState<bigint>(0n);
-  const [reserve0, setReserve0] = useState<bigint>(0n);
-  const [reserve1, setReserve1] = useState<bigint>(0n);
-  const [token0, setToken0] = useState<`0x${string}` | null>(null);
-  const [token1, setToken1] = useState<`0x${string}` | null>(null);
-  const [decimals0, setDecimals0] = useState<number>(18);
-  const [decimals1, setDecimals1] = useState<number>(18);
-  const [symbol0, setSymbol0] = useState<string>("Token0");
-  const [symbol1, setSymbol1] = useState<string>("Token1");
-  const [status, setStatus] = useState<"idle" | "approving" | "removing" | "success" | "error">("idle");
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-  const receipt = useWaitForTransactionReceipt({ hash: txHash, query: { enabled: Boolean(txHash) } });
-  useTransactionStatus({ isPending: !!txHash && receipt.isLoading, isSuccess: receipt.isSuccess, isError: receipt.isError, error: receipt.error, hash: txHash as string });
+  const [lpTokenBalance, allowance, totalSupply, reserves, token0, token1] = useMemo(() => {
+    const results = pairReads.data?.map((r) => r.result) ?? [];
+    const bal = (results[0] as bigint) ?? 0n;
+    const allow = (results[1] as bigint) ?? 0n;
+    const ts = (results[2] as bigint) ?? 0n;
+    const res = (results[3] as [bigint, bigint, number]) ?? [0n, 0n, 0];
+    const t0 = results[4] as `0x${string}` | undefined;
+    const t1 = results[5] as `0x${string}` | undefined;
+    return [bal, allow, ts, res, t0, t1] as const;
+  }, [pairReads.data]);
 
-  // Reads
-  const balRead = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "balanceOf", args: user ? [user] : undefined, query: { enabled: Boolean(user) } });
-  const tsRead = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "totalSupply" });
-  const resRead = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "getReserves" });
-  const t0Read = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "token0" });
-  const t1Read = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "token1" });
+  // Minimal ERC20 ABI for symbol/decimals
+  const ERC20_META = [
+    { name: 'symbol', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
+    { name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
+  ] as const;
 
-  const allowanceRead = useReadContract({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "allowance", args: user ? [user, router] : undefined, query: { enabled: Boolean(user) } });
+  const tokenMetaReads = useReadContracts({
+    contracts: token0 && token1 ? [
+      { address: token0, abi: ERC20_META as unknown as Abi, functionName: 'symbol' },
+      { address: token0, abi: ERC20_META as unknown as Abi, functionName: 'decimals' },
+      { address: token1, abi: ERC20_META as unknown as Abi, functionName: 'symbol' },
+      { address: token1, abi: ERC20_META as unknown as Abi, functionName: 'decimals' },
+    ] : [],
+    query: { enabled: !!token0 && !!token1 },
+  });
 
-  useEffect(() => { if (balRead.data) setLpTokenBalance(balRead.data as unknown as bigint); }, [balRead.data]);
-  useEffect(() => { if (tsRead.data) setTotalSupply(tsRead.data as unknown as bigint); }, [tsRead.data]);
-  useEffect(() => {
-    if (resRead.data) {
-      const [r0, r1] = resRead.data as unknown as [bigint, bigint, number];
-      setReserve0(r0); setReserve1(r1);
-    }
-  }, [resRead.data]);
-  useEffect(() => { if (t0Read.data) setToken0(t0Read.data as unknown as `0x${string}`); }, [t0Read.data]);
-  useEffect(() => { if (t1Read.data) setToken1(t1Read.data as unknown as `0x${string}`); }, [t1Read.data]);
+  const [symbol0, decimals0, symbol1, decimals1] = useMemo(() => {
+    const r = tokenMetaReads.data?.map((x) => x.result) ?? [];
+    return [
+      (r[0] as string) ?? 'TKN0',
+      Number((r[1] as number) ?? 18),
+      (r[2] as string) ?? 'TKN1',
+      Number((r[3] as number) ?? 18),
+    ] as const;
+  }, [tokenMetaReads.data]);
+  
+  const [reserve0, reserve1] = ((reserves as unknown as [bigint, bigint, number])?.slice?.(0, 2) as [bigint, bigint]) ?? [0n, 0n];
 
-  // Token metadata reads (use Pair ABI as ERC20 superset)
-  const dec0Read = useReadContract({ address: token0 ?? undefined, abi: pairAbi.abi as Abi, functionName: "decimals", args: token0 ? [] : undefined, query: { enabled: Boolean(token0) } });
-  const dec1Read = useReadContract({ address: token1 ?? undefined, abi: pairAbi.abi as Abi, functionName: "decimals", args: token1 ? [] : undefined, query: { enabled: Boolean(token1) } });
-  const sym0Read = useReadContract({ address: token0 ?? undefined, abi: pairAbi.abi as Abi, functionName: "symbol", args: token0 ? [] : undefined, query: { enabled: Boolean(token0) } });
-  const sym1Read = useReadContract({ address: token1 ?? undefined, abi: pairAbi.abi as Abi, functionName: "symbol", args: token1 ? [] : undefined, query: { enabled: Boolean(token1) } });
+  const amountLpToBurn = (lpTokenBalance * BigInt(percentageToRemove)) / 100n;
+  const amount0ToReceive = totalSupply > 0n ? (reserve0 * amountLpToBurn) / totalSupply : 0n;
+  const amount1ToReceive = totalSupply > 0n ? (reserve1 * amountLpToBurn) / totalSupply : 0n;
+  const showEstimates = amountLpToBurn > 0n && (reserve0 > 0n || reserve1 > 0n);
 
-  useEffect(() => { if (dec0Read.data) setDecimals0(Number(dec0Read.data as unknown as bigint)); }, [dec0Read.data]);
-  useEffect(() => { if (dec1Read.data) setDecimals1(Number(dec1Read.data as unknown as bigint)); }, [dec1Read.data]);
-  useEffect(() => { if (sym0Read.data) setSymbol0(sym0Read.data as unknown as string); }, [sym0Read.data]);
-  useEffect(() => { if (sym1Read.data) setSymbol1(sym1Read.data as unknown as string); }, [sym1Read.data]);
-
-  const amountLpToBurn = useMemo(() => (lpTokenBalance * BigInt(Math.floor(percentageToRemove))) / 100n, [lpTokenBalance, percentageToRemove]);
-  const amount0ToReceive = useMemo(() => (totalSupply > 0n ? (reserve0 * amountLpToBurn) / totalSupply : 0n), [reserve0, amountLpToBurn, totalSupply]);
-  const amount1ToReceive = useMemo(() => (totalSupply > 0n ? (reserve1 * amountLpToBurn) / totalSupply : 0n), [reserve1, amountLpToBurn, totalSupply]);
-
-  function formatAmount(raw: bigint, decimals: number, maxFrac = 6): string {
-    try {
-      const divisor = 10 ** decimals;
-      return (Number(raw) / divisor).toLocaleString(undefined, { maximumFractionDigits: maxFrac });
-    } catch {
-      // Fallback for very large numbers
-      const s = raw.toString();
-      if (decimals === 0) return s;
-      const pad = decimals - s.length + 1;
-      const whole = pad > 0 ? "0" : s.slice(0, -decimals);
-      const frac = pad > 0 ? "0".repeat(pad) + s : s.slice(-decimals);
-      return `${whole}.${frac}`;
-    }
-  }
-
-  const allowance = (allowanceRead.data as unknown as bigint) || 0n;
   const needsApproval = amountLpToBurn > 0n && allowance < amountLpToBurn;
 
-  async function onApprove() {
-    if (!user) return;
-    setStatus("approving");
-    try {
-      const hash = await writeContractAsync({ address: pairAddress, abi: pairAbi.abi as Abi, functionName: "approve", args: [router, BigInt(2) ** BigInt(256) - 1n] });
-      setTxHash(hash as `0x${string}`);
-      setStatus("idle");
-    } catch {
-      setStatus("error");
-    }
-  }
-
+  async function onApprove() { const hash = await writeContractAsync({ address: pairAddress, abi: pairAbi as Abi, functionName: "approve", args: [router, amountLpToBurn] }); setTxHash(hash); }
   async function onRemove() {
-    if (!user || !token0 || !token1) return;
-    setStatus("removing");
-    try {
-      const hash = await writeContractAsync({
-        address: router,
-        abi: routerAbi.abi as Abi,
-        functionName: "removeLiquidity",
-        args: [token0, token1, amountLpToBurn, 0n, 0n, user, BigInt(Math.floor(Date.now() / 1000) + 1800)],
-      });
-      setTxHash(hash as `0x${string}`);
-      setStatus("success");
-    } catch {
-      setStatus("error");
-    }
+    if (!token0 || !token1) return;
+    const bps = BigInt(Math.floor(slippageTolerance * 100));
+    const denom = 10000n;
+    const min0 = (amount0ToReceive * (denom - bps)) / denom;
+    const min1 = (amount1ToReceive * (denom - bps)) / denom;
+    const deadline = BigInt(Math.floor(Date.now() / 1000)) + BigInt(deadlineMinutes) * 60n;
+    const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "removeLiquidity", args: [token0, token1, amountLpToBurn, min0, min1, user!, deadline] });
+    setTxHash(hash);
   }
 
-  const isLoadingData = balRead.isLoading || tsRead.isLoading || resRead.isLoading || t0Read.isLoading || t1Read.isLoading || dec0Read.isLoading || dec1Read.isLoading || sym0Read.isLoading || sym1Read.isLoading;
-  if (isLoadingData) {
-    return (
-      <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="panelBorder" rounded="xl" p={6} bg="panelBg">
-        <Skeleton height="200px" />
-        <Flex direction="column" align="center" mt={4}>
-          <Spinner size="lg" />
-          <Text mt={2}>Loading pool data...</Text>
-        </Flex>
-      </Box>
-    );
-  }
+  const isLoadingData = pairReads.isLoading || tokenMetaReads.isLoading;
+  const isLoadingPairOnly = pairReads.isLoading;
 
+  // --- GIAO DIỆN ĐÃ ĐƯỢC THIẾT KẾ LẠI ---
   return (
-    <Box w={{ base: "100%", md: "560px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
-      <Flex direction="column" align="stretch" gap={4}>
-        <Heading size="lg" mb={1} fontWeight="semibold">Remove Liquidity</Heading>
-        <Text color="gray.400">Pair: {symbol0} / {symbol1}</Text>
-        <Box borderTopWidth="1px" borderColor="panelBorder" />
-
-        <Text fontSize="sm" color="gray.600">Select percentage</Text>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={percentageToRemove}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPercentageToRemove(Number(e.target.value))}
-          style={{ width: "100%" }}
-        />
-        <HStack justify="space-between">
-          <HStack gap={2}>
-            <Button size="sm" onClick={() => setPercentageToRemove(25)}>25%</Button>
-            <Button size="sm" onClick={() => setPercentageToRemove(50)}>50%</Button>
-            <Button size="sm" onClick={() => setPercentageToRemove(75)}>75%</Button>
-            <Button size="sm" onClick={() => setPercentageToRemove(100)}>Max</Button>
-          </HStack>
-          <Text>{percentageToRemove}%</Text>
+    <VStack align="stretch" gap={5}>
+      <VStack gap={3}>
+        <Heading size="2xl" color="white">{percentageToRemove}%</Heading>
+        
+        <Box position="relative" px={1}>
+          <Global styles={css`
+            .qs-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 9999px; background: linear-gradient(90deg, #0052FF 0%, #00D1B2 100%); outline: none; opacity: 0.9; transition: opacity 0.2s; }
+            .qs-range:hover { opacity: 1; }
+            .qs-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #0f1928; border: 2px solid #00FFC2; box-shadow: 0 0 12px rgba(0,255,194,0.5); cursor: pointer; margin-top: -6px; }
+            .qs-range::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #0f1928; border: 2px solid #00FFC2; box-shadow: 0 0 12px rgba(0,255,194,0.5); cursor: pointer; }
+          `} />
+          <input
+            className="qs-range"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={percentageToRemove}
+            onChange={(e) => setPercentageToRemove(Number(e.target.value))}
+          />
+        </Box>
+        
+        <HStack w="full" justify="space-between">
+          {[25, 50, 75, 100].map(val => (
+            <Button key={val} size="sm" variant="ghost" color="whiteAlpha.600" _hover={{ bg: 'whiteAlpha.100', color: 'white' }} onClick={() => setPercentageToRemove(val)}>{val}%</Button>
+          ))}
         </HStack>
+      </VStack>
 
-        <Box borderTopWidth="1px" borderColor="panelBorder" />
-        <Flex direction="column" align="stretch" gap={1}>
-          <Text fontWeight="semibold">You will receive:</Text>
-          <Text>{symbol0}: {formatAmount(amount0ToReceive, decimals0)}</Text>
-          <Text>{symbol1}: {formatAmount(amount1ToReceive, decimals1)}</Text>
-        </Flex>
+      <VStack
+        p={4}
+        bg="blackAlpha.300"
+        rounded="xl"
+        border="1px solid"
+        borderColor="rgba(255, 255, 255, 0.05)"
+        gap={3}
+        align="stretch"
+      >
+        <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
+        <TokenAmountDisplay symbol={symbol0} amount={showEstimates ? formatUnits(amount0ToReceive, decimals0) : "0"} isLoading={isLoadingData} />
+        <TokenAmountDisplay symbol={symbol1} amount={showEstimates ? formatUnits(amount1ToReceive, decimals1) : "0"} isLoading={isLoadingData} />
+      </VStack>
+      
+      <VStack gap={2} align="stretch">
+        <InfoRow label="Your LP token balance" value={
+          isLoadingPairOnly ? <Skeleton rounded="md"><Box h="20px" w="100px" /></Skeleton> : formatUnits(lpTokenBalance, 18)
+        }/>
+        <InfoRow label="LP tokens to remove" value={
+          isLoadingPairOnly ? <Skeleton rounded="md"><Box h="20px" w="100px" /></Skeleton> : formatUnits(amountLpToBurn, 18)
+        }/>
+      </VStack>
 
-        <Text color="gray.400" fontSize="sm">Price: 1 {symbol0} = {reserve0 > 0n && reserve1 > 0n ? ( (Number(reserve1) / 10 ** decimals1) / Math.max(Number(reserve0) / 10 ** decimals0, 1e-18) ).toFixed(6) : "-"} {symbol1}</Text>
-
-        <Box borderTopWidth="1px" borderColor="panelBorder" />
-        <Flex justify="space-between">
-          <Text color="gray.500">Your LP balance</Text>
-          <Text fontWeight="semibold">{lpTokenBalance.toString()}</Text>
-        </Flex>
-        <Flex justify="space-between">
-          <Text color="gray.500">LP to remove</Text>
-          <Text fontWeight="semibold">{amountLpToBurn.toString()}</Text>
-        </Flex>
-
-        <HStack justify="space-between" pt={2}>
-          {onClose ? (
-            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
-          ) : (
-            <ChakraLink as={NextLink} href="/pool" color="brand.300">Back to Pool</ChakraLink>
-          )}
-          {needsApproval ? (
-            <Button colorScheme="brand" onClick={onApprove} loading={status === "approving"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Approve</Button>
-          ) : (
-            <Button colorScheme="brand" onClick={onRemove} loading={status === "removing"} disabled={amountLpToBurn === 0n} _disabled={{ opacity: 0.6, cursor: "not-allowed" }} height="44px" rounded="md" fontWeight="semibold">Remove</Button>
-          )}
-        </HStack>
-      </Flex>
-    </Box>
+      <HStack pt={2}>
+        {onClose && <Button variant="outline" borderColor="whiteAlpha.300" color="whiteAlpha.800" _hover={{ bg: 'whiteAlpha.100' }} onClick={onClose} flex={1}>Cancel</Button>}
+        <GradientButton
+          onClick={needsApproval ? onApprove : onRemove}
+          loading={receipt.isLoading}
+          disabled={amountLpToBurn === 0n}
+          flex={2}
+        >
+          {needsApproval ? "Approve" : "Remove"}
+        </GradientButton>
+      </HStack>
+    </VStack>
   );
 }
-
-
-
-

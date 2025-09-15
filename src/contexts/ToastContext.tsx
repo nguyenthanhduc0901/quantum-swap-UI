@@ -1,61 +1,66 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { VStack } from "@chakra-ui/react";
+import { AnimatePresence } from "framer-motion";
+import { CustomToast, type ToastKind } from "@/components/ui/CustomToast";
 
-type ToastKind = "loading" | "success" | "error";
-type ToastItem = { id: number; title: string; description?: string; kind: ToastKind };
-
-type ToastApi = {
-  push: (t: Omit<ToastItem, "id">) => number;
-  update: (id: number, t: Partial<Omit<ToastItem, "id">>) => void;
-  remove: (id: number) => void;
+type ToastMessage = {
+  id: number;
+  title: string;
+  description?: React.ReactNode;
+  kind: ToastKind;
 };
 
-const ToastCtx = createContext<ToastApi | null>(null);
+type ToastContextType = {
+  push: (options: Omit<ToastMessage, "id"> & { duration?: number | null }) => number;
+  update: (id: number, options: Partial<Omit<ToastMessage, "id">>) => void;
+};
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const idRef = useRef(1);
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-  const push = useCallback((t: Omit<ToastItem, "id">) => {
-    const id = idRef.current++;
-    setToasts((arr) => [...arr, { id, ...t }]);
+export const ToastProvider = ({ children }: { children: ReactNode }) => {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const remove = (id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const push = useCallback((options: Omit<ToastMessage, "id"> & { duration?: number | null }) => {
+    const id = Date.now();
+    const duration = options.duration === null ? null : options.duration ?? 5000;
+    setToasts((prev) => [...prev, { id, ...options }]);
+    if (duration !== null) {
+      setTimeout(() => remove(id), duration);
+    }
     return id;
   }, []);
 
-  const update = useCallback((id: number, t: Partial<Omit<ToastItem, "id">>) => {
-    setToasts((arr) => arr.map((x) => (x.id === id ? { ...x, ...t } : x)));
+  const update = useCallback((id: number, options: Partial<Omit<ToastMessage, "id">>) => {
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, ...options } : t)));
   }, []);
-
-  const remove = useCallback((id: number) => {
-    setToasts((arr) => arr.filter((x) => x.id !== id));
-  }, []);
-
-  const api = useMemo<ToastApi>(() => ({ push, update, remove }), [push, update, remove]);
 
   return (
-    <ToastCtx.Provider value={api}>
+    <ToastContext.Provider value={{ push, update }}>
       {children}
-      <Box position="fixed" top={4} right={4} zIndex={10000}>
-        <Flex direction="column" gap={2}>
-          {toasts.map((t) => (
-            <Box key={t.id} bg={t.kind === "error" ? "red.100" : t.kind === "success" ? "green.100" : "gray.100"} borderWidth="1px" borderColor="gray.200" rounded="md" p={3} minW="260px">
-              <Text fontWeight="semibold">{t.title}</Text>
-              {t.description && <Text fontSize="sm" color="gray.600">{t.description}</Text>}
-            </Box>
+      <VStack spacing={3} position="fixed" bottom={4} right={4} zIndex={10000} align="flex-end">
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <CustomToast key={toast.id} {...toast} />
           ))}
-        </Flex>
-      </Box>
-    </ToastCtx.Provider>
+        </AnimatePresence>
+      </VStack>
+    </ToastContext.Provider>
   );
-}
+};
 
-export function useAppToast(): ToastApi {
-  const ctx = useContext(ToastCtx);
-  if (!ctx) throw new Error("ToastProvider not found");
-  return ctx;
-}
+export const useAppToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useAppToast must be used within a ToastProvider");
+  }
+  return context;
+};
 
 
 

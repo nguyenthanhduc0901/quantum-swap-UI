@@ -3,9 +3,7 @@
 import { useMemo } from "react";
 import { useAccount, useChainId, useReadContract } from "wagmi";
 import type { Abi } from "viem";
-import factoryAbi from "@/constants/abi/QuantumSwapFactory.json";
-import routerAbi from "@/constants/abi/QuantumSwapRouter.json";
-import pairAbi from "@/constants/abi/QuantumSwapPair.json";
+import { quantumSwapFactoryAbi as factoryAbi, quantumSwapRouterAbi as routerAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts, type QuantumSwapAddresses } from "@/constants/addresses";
 import type { TokenInfo } from "@/constants/tokens";
 
@@ -40,7 +38,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
   // 1) Get pair address
   const pairRead = useReadContract({
     address: factory,
-    abi: factoryAbi.abi as Abi,
+    abi: factoryAbi as Abi,
     functionName: "getPair",
     args: addressesReady ? [tokenA!.address, tokenB!.address] : undefined,
     query: { enabled: addressesReady },
@@ -53,7 +51,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
   // 2) Get reserves if pair exists
   const reservesRead = useReadContract({
     address: pairExists ? pairAddress : undefined,
-    abi: pairAbi.abi as Abi,
+    abi: pairAbi as Abi,
     functionName: "getReserves",
     args: pairExists ? [] : undefined,
     query: { enabled: pairExists },
@@ -86,7 +84,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
   // 4) Estimated amounts using router.quote when reserves > 0
   const quoteAtoB = useReadContract({
     address: router,
-    abi: routerAbi.abi as Abi,
+    abi: routerAbi as Abi,
     functionName: "quote",
     args:
       tokenA && tokenB && reserves && Number(amountA) > 0
@@ -101,7 +99,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
 
   const quoteBtoA = useReadContract({
     address: router,
-    abi: routerAbi.abi as Abi,
+    abi: routerAbi as Abi,
     functionName: "quote",
     args:
       tokenA && tokenB && reserves && Number(amountB) > 0

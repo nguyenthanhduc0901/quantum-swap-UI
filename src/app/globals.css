@@ -1,31 +1,85 @@
-@import "tailwindcss";
+/* --- 1. Cấu hình Biến và Nền cơ bản --- */
+
+@import "tailwindcss"; 
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html, body {
-  height: 100%;
+  --background: #0d1a2d;
+  --foreground: #ededed;
+  
+  --glow-color-1: rgba(0, 209, 178, 0.25); /* Xanh ngọc */
+  --glow-color-2: rgba(0, 82, 255, 0.2);   /* Xanh dương */
+  --noise-opacity: 0.04; /* Tùy chỉnh độ đậm của nhiễu tại đây */
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Geist', sans-serif;
   margin: 0;
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
+
+  /* === SỬA LỖI TẠI ĐÂY === */
+  /* Chỉ ẩn thanh cuộn ngang để tránh lỗi khi quầng sáng di chuyển ra ngoài */
+  /* Điều này sẽ cho phép thanh cuộn dọc hoạt động bình thường */
+  overflow-x: hidden;
+}
+
+/* --- Lớp vân nhiễu phủ lên trên cùng --- */
+body::after {
+  content: '';
+  position: fixed; /* Cố định theo màn hình */
+  inset: 0; /* Phủ kín toàn bộ màn hình */
+  z-index: 10; /* Đặt lên trên nội dung nhưng... */
+  pointer-events: none; /* ...không chặn bất kỳ tương tác chuột nào (click, scroll) */
+  background-image: url('https://www.transparenttextures.com/patterns/noise.png');
+  opacity: var(--noise-opacity);
+}
+
+
+/* --- 2. Tạo và Di chuyển Quầng sáng ĐÃ TỐI ƯU --- */
+
+@keyframes moveGlow {
+  0% { transform: translate(10vw, -15vh) scale(1); }
+  25% { transform: translate(-20vw, 20vh) scale(1.2); }
+  50% { transform: translate(30vw, 40vh) scale(0.9); }
+  75% { transform: translate(15vw, -10vh) scale(1.1); }
+  100% { transform: translate(10vw, -15vh) scale(1); }
+}
+
+@keyframes moveGlowSecondary {
+  0% { transform: translate(-20vw, 30vh) scale(1.1); }
+  25% { transform: translate(25vw, -10vh) scale(0.9); }
+  50% { transform: translate(-10vw, -20vh) scale(1.2); }
+  75% { transform: translate(15vw, 40vh) scale(1); }
+  100% { transform: translate(-20vw, 30vh) scale(1.1); }
+}
+
+.glow-effect {
+  position: fixed; /* cố định để không làm tăng chiều cao trang */
+  z-index: -1; /* Đặt phía sau nội dung trang */
+  border-radius: 50%;
+  will-change: transform;
+  pointer-events: none; /* tránh chặn tương tác và cuộn */
+}
+
+/* Quầng sáng thứ nhất (Xanh ngọc) */
+.glow-effect.teal {
+  width: 45vmax;
+  height: 45vmax;
+  background: radial-gradient(circle, var(--glow-color-1) 0%, transparent 65%);
+  top: 10%;
+  left: 20%;
+  animation: moveGlow 25s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Quầng sáng thứ hai (Xanh dương) */
+.glow-effect.blue {
+  width: 40vmax;
+  height: 40vmax;
+  background: radial-gradient(circle, var(--glow-color-2) 0%, transparent 65%);
+  top: 60%;
+  left: 70%;
+  animation: moveGlowSecondary 30s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }

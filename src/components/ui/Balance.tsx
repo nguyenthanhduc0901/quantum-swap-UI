@@ -3,24 +3,52 @@
 import { Skeleton, Text } from "@chakra-ui/react";
 import { useAccount, useBalance } from "wagmi";
 import { ethers } from "ethers";
+import { useEffect, useState } from "react";
 
-export function Balance({ tokenAddress }: { tokenAddress: `0x${string}` }) {
+type Props = {
+  tokenAddress: `0x${string}`;
+  // Thêm prop để tùy chỉnh màu chữ nếu cần
+  textColor?: string; 
+};
+
+export function Balance({ tokenAddress, textColor = "whiteAlpha.600" }: Props) {
   const { address } = useAccount();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const { data, isLoading } = useBalance({
     address,
     token: tokenAddress,
-    watch: true, // auto refetch on new blocks (after swap/add/remove)
-    query: { enabled: Boolean(address), staleTime: 0, refetchOnWindowFocus: true },
+    query: { enabled: Boolean(address), refetchOnWindowFocus: true },
   });
 
-  if (isLoading) return <Skeleton height="16px" width="100px" />;
-  if (!data) return <Text color="gray.500">-</Text>;
+  // Tránh hydration mismatch: luôn hiển thị skeleton đến khi đã mounted phía client
+  if (!mounted || isLoading) {
+    return (
+      <Skeleton height="18px" width="120px" rounded="md" />
+    );
+  }
 
+  // 2. Cập nhật màu sắc cho trạng thái không có dữ liệu
+  if (!data) {
+    return (
+      <Text fontSize="sm" color={textColor}>
+        Balance: -
+      </Text>
+    );
+  }
+
+  // Logic định dạng giữ nguyên
   const formatted = ethers.formatUnits(data.value, data.decimals);
-  const short = Number(formatted).toLocaleString(undefined, { maximumFractionDigits: 6 });
-  return <Text color="gray.600">{short} {data.symbol}</Text>;
+  
+  // Hiển thị số với tối đa 4 chữ số thập phân để gọn hơn
+  const short = Number(formatted).toLocaleString(undefined, {
+    maximumFractionDigits: 4, 
+  });
+
+  // 3. Cập nhật màu sắc và thêm label "Balance:" cho rõ ràng
+  return (
+    <Text fontSize="sm" color={textColor} whiteSpace="nowrap">
+      Balance: {short}
+    </Text>
+  );
 }
-
-
-
-

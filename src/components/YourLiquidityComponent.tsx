@@ -1,165 +1,141 @@
 "use client";
 
 import { useMemo } from "react";
-import { Box, Flex, Spinner, Text } from "@chakra-ui/react";
+import {
+  Box, Flex, Spinner, Text, VStack, Heading, Skeleton, Button, Link as ChakraLink,
+} from "@chakra-ui/react";
+import NextLink from "next/link";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
+import { formatUnits } from "viem";
 import { LiquidityPositionCard } from "./LiquidityPositionCard";
 import { useTokenList } from "@/hooks/useTokenList";
-import factoryAbi from "@/constants/abi/QuantumSwapFactory.json";
-import pairAbi from "@/constants/abi/QuantumSwapPair.json";
-import { getContracts, type QuantumSwapAddresses } from "@/constants/addresses";
-import { getDefaultTokens } from "@/constants/tokens";
+import { quantumSwapFactoryAbi as factoryAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
+import { getContracts } from "@/constants/addresses";
+import { GradientButton } from "./ui/GradientButton";
 
-type Position = { pairAddress: `0x${string}`; token0?: `0x${string}`; token1?: `0x${string}` };
-
+// Logic hooks và state không thay đổi nhiều, chỉ tổ chức lại
 export function YourLiquidityComponent() {
   const chainId = useChainId() ?? 31337;
   const account = useAccount();
-  const contracts = getContracts(chainId) as QuantumSwapAddresses | undefined;
-  const factory = (contracts?.QuantumSwapFactory ?? "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  const contracts = getContracts(chainId);
+  const factory = contracts?.QuantumSwapFactory as `0x${string}`;
 
-  // 1) Get pairs length
-  const lengthRead = useReadContract({
-    address: factory,
-    abi: factoryAbi.abi as Abi,
-    functionName: "allPairsLength",
-    args: [],
-    query: { enabled: Boolean(factory) },
+  // 1. Lấy tổng số cặp
+  const { data: lengthData, isLoading: isLoadingLength } = useReadContract({
+    address: factory, abi: factoryAbi as Abi, functionName: "allPairsLength",
   });
-  const length = Number((lengthRead.data as bigint | undefined) ?? 0n);
+  const length = Number((lengthData as bigint) ?? 0n);
 
-  // 2) Fetch all pair addresses
-  const pairIndexCalls = useMemo(() => {
-    return Array.from({ length }, (_, i) => ({
-      address: factory as `0x${string}`,
-      abi: factoryAbi.abi as Abi,
-      functionName: "allPairs" as const,
-      args: [BigInt(i)],
-    }));
-  }, [factory, length]);
+  // 2. Lấy địa chỉ của tất cả các cặp
+  const pairIndexCalls = useMemo(() => Array.from({ length }, (_, i) => ({
+    address: factory, abi: factoryAbi as Abi, functionName: "allPairs" as const, args: [BigInt(i)],
+  })), [factory, length]);
+  const { data: pairsData, isLoading: isLoadingPairs } = useReadContracts({
+    contracts: pairIndexCalls, query: { enabled: length > 0 },
+  });
+  const pairAddresses = useMemo(() => (pairsData?.map(r => r.result as `0x${string}`).filter(Boolean) ?? []) as `0x${string}`[], [pairsData]);
 
-  const pairsRead = useReadContracts({
-    contracts: pairIndexCalls,
-    query: { enabled: length > 0 },
+  // 3. Lấy số dư của người dùng cho mỗi cặp
+  const balanceCalls = useMemo(() => !account.address ? [] : pairAddresses.map(p => ({
+    address: p, abi: pairAbi as Abi, functionName: "balanceOf" as const, args: [account.address],
+  })), [pairAddresses, account.address]);
+  const { data: balancesData, isLoading: isLoadingBalances } = useReadContracts({
+    contracts: balanceCalls, query: { enabled: !!account.address && pairAddresses.length > 0 },
   });
 
-  const pairAddresses = useMemo(() => {
-    if (!pairsRead.data) return [] as `0x${string}`[];
-    return pairsRead.data
-      .map((r) => r.result as `0x${string}`)
-      .filter((a) => a && a !== "0x0000000000000000000000000000000000000000");
-  }, [pairsRead.data]);
+  // Lọc ra các vị thế mà người dùng có sở hữu
+  const positionsWithBalance = useMemo(() => {
+    if (!balancesData) return [];
+    return balancesData.map((r, i) => ({
+      balance: (r.result as bigint) ?? 0n,
+      pairAddress: pairAddresses[i],
+    })).filter(x => x.balance > 0n);
+  }, [balancesData, pairAddresses]);
 
-  // 3) Fetch balanceOf for each pair for current user
-  const balanceCalls = useMemo(() => {
-    if (!account.address) return [] as any[];
-    return pairAddresses.map((p) => ({
-      address: p,
-      abi: pairAbi.abi as Abi,
-      functionName: "balanceOf" as const,
-      args: [account.address],
-    }));
-  }, [pairAddresses, account.address]);
+  // 4. Lấy thông tin token cho các vị thế sở hữu
+  const tokenCalls = useMemo(() => positionsWithBalance.flatMap(p => [
+    { address: p.pairAddress, abi: pairAbi as Abi, functionName: "token0" as const },
+    { address: p.pairAddress, abi: pairAbi as Abi, functionName: "token1" as const },
+  ]), [positionsWithBalance]);
+  const { data: tokensData, isLoading: isLoadingTokens } = useReadContracts({ contracts: tokenCalls });
 
-  const balancesRead = useReadContracts({
-    contracts: balanceCalls,
-    query: { enabled: pairAddresses.length > 0 && Boolean(account.address) },
-  });
+  const { tokens: tokenList } = useTokenList();
+  const symbolMap = useMemo(() => new Map(tokenList.map(t => [t.address.toLowerCase(), t.symbol])), [tokenList]);
+  const logoMap = useMemo(() => new Map(tokenList.map(t => [t.address.toLowerCase(), t.logoURI])), [tokenList]);
 
-  const positionsPairs = useMemo(() => {
-    if (!balancesRead.data) return [] as `0x${string}`[];
-    return balancesRead.data
-      .map((r, i) => ({ balance: (r.result as bigint) ?? 0n, pair: pairAddresses[i] }))
-      .filter((x) => x.balance > 0n)
-      .map((x) => x.pair);
-  }, [balancesRead.data, pairAddresses]);
+  const positions = useMemo(() => positionsWithBalance.map((p, i) => {
+    const token0Address = tokensData?.[i * 2]?.result as `0x${string}` | undefined;
+    const token1Address = tokensData?.[i * 2 + 1]?.result as `0x${string}` | undefined;
+    return {
+      ...p,
+      token0Symbol: token0Address ? symbolMap.get(token0Address.toLowerCase()) ?? "TKN0" : "...",
+      token1Symbol: token1Address ? symbolMap.get(token1Address.toLowerCase()) ?? "TKN1" : "...",
+      token0Logo: token0Address ? logoMap.get(token0Address.toLowerCase()) : undefined,
+      token1Logo: token1Address ? logoMap.get(token1Address.toLowerCase()) : undefined,
+    };
+  }), [positionsWithBalance, tokensData, symbolMap, logoMap]);
 
-  // 4) Resolve token0/token1 for each kept pair
-  const token0Calls = useMemo(() => positionsPairs.map((p) => ({
-    address: p,
-    abi: pairAbi.abi as Abi,
-    functionName: "token0" as const,
-    args: [],
-  })), [positionsPairs]);
+  // Trạng thái loading tổng hợp
+  const isLoading = isLoadingLength || isLoadingPairs || isLoadingBalances || (positionsWithBalance.length > 0 && isLoadingTokens);
 
-  const token1Calls = useMemo(() => positionsPairs.map((p) => ({
-    address: p,
-    abi: pairAbi.abi as Abi,
-    functionName: "token1" as const,
-    args: [],
-  })), [positionsPairs]);
-
-  const token0Read = useReadContracts({ contracts: token0Calls, query: { enabled: positionsPairs.length > 0 } });
-  const token1Read = useReadContracts({ contracts: token1Calls, query: { enabled: positionsPairs.length > 0 } });
-
-  const { tokens: listTokens } = useTokenList();
-
-  const positions: Position[] = useMemo(() => {
-    const defaults = getDefaultTokens(chainId ?? 31337);
-    const addrToSymbol = new Map<string, string>([
-      ...defaults.map((t) => [t.address.toLowerCase(), t.symbol] as const),
-      ...listTokens.map((t) => [t.address.toLowerCase(), t.symbol] as const),
-    ]);
-    if (!token0Read.data || !token1Read.data) return positionsPairs.map((p) => ({ pairAddress: p }));
-    return positionsPairs.map((p, i) => {
-      const t0 = (token0Read.data?.[i]?.result as `0x${string}` | undefined)?.toLowerCase();
-      const t1 = (token1Read.data?.[i]?.result as `0x${string}` | undefined)?.toLowerCase();
-      return {
-        pairAddress: p,
-        token0: t0 as `0x${string}` | undefined,
-        token1: t1 as `0x${string}` | undefined,
-        token0Symbol: t0 ? (addrToSymbol.get(t0) ?? "Token0") : "Token0",
-        token1Symbol: t1 ? (addrToSymbol.get(t1) ?? "Token1") : "Token1",
-      } as any;
-    });
-  }, [positionsPairs, token0Read.data, token1Read.data, chainId, listTokens]);
-
-  // Read user's LP balances for each shown pair
-  const userBalancesCalls = useMemo(() => {
-    if (!account.address) return [] as any[];
-    return positionsPairs.map((p) => ({
-      address: p,
-      abi: pairAbi.abi as Abi,
-      functionName: "balanceOf" as const,
-      args: [account.address],
-    }));
-  }, [positionsPairs, account.address]);
-  const userBalances = useReadContracts({ contracts: userBalancesCalls, query: { enabled: positionsPairs.length > 0 && Boolean(account.address) } });
-
-  if (lengthRead.isLoading || pairsRead.isLoading || balancesRead.isLoading) {
+  if (isLoading) {
     return (
-      <Flex direction="column" align="center" justify="center" py={10} gap={2}>
-        <Spinner color="teal.500" />
-        <Text color="gray.600">Fetching your positions...</Text>
-      </Flex>
+      <VStack
+        w="full"
+        p={{ base: 4, md: 6 }}
+        gap={4}
+        align="stretch"
+        bg="rgba(23, 35, 53, 0.5)"
+        backdropFilter="blur(10px)"
+        border="1px solid"
+        borderColor="rgba(255, 255, 255, 0.05)"
+        rounded="2xl"
+      >
+        <Skeleton height="30px" width="200px" />
+        <Skeleton height="80px" rounded="xl" />
+        <Skeleton height="80px" rounded="xl" />
+      </VStack>
     );
   }
 
   if (positions.length === 0) {
     return (
-      <Box w={{ base: "100%", md: "520px" }} borderWidth="1px" borderColor="cardBorder" rounded="xl" p={6} bg="cardBg" boxShadow="card">
-        <Text color="gray.500">You have no liquidity positions.</Text>
-      </Box>
+      <VStack
+        w="full"
+        p={{ base: 6, md: 8 }}
+        gap={4}
+        bg="rgba(23, 35, 53, 0.5)"
+        backdropFilter="blur(10px)"
+        border="1px solid"
+        borderColor="rgba(255, 255, 255, 0.05)"
+        rounded="2xl"
+        textAlign="center"
+      >
+        <Heading size="md" color="whiteAlpha.900">No Liquidity Found</Heading>
+        <Text color="whiteAlpha.600">You do not have any liquidity positions in this pool yet.</Text>
+        <ChakraLink as={NextLink} href="/pool">
+          <GradientButton>Add Liquidity</GradientButton>
+        </ChakraLink>
+      </VStack>
     );
   }
 
   return (
-    <Flex direction="column" align="stretch" gap={3}>
-      {positions.map((p, i) => {
-        const bal = (userBalances.data?.[i]?.result as bigint | undefined)?.toString();
-        return (
-          <Box key={p.pairAddress}>
-            <LiquidityPositionCard pairAddress={p.pairAddress} token0Symbol={(p as any).token0Symbol} token1Symbol={(p as any).token1Symbol} />
-            {bal && (
-              <Text mt={1} color="gray.500" fontSize="sm">Your LP: {bal}</Text>
-            )}
-          </Box>
-        );
-      })}
-    </Flex>
+    <VStack w="full" align="stretch" gap={4}>
+      <Heading size="lg" color="whiteAlpha.900">Your Liquidity</Heading>
+      {positions.map(p => (
+        <LiquidityPositionCard
+          key={p.pairAddress}
+          pairAddress={p.pairAddress}
+          token0Symbol={p.token0Symbol}
+          token1Symbol={p.token1Symbol}
+          lpBalance={`${Number(formatUnits(p.balance, 18)).toLocaleString(undefined, { maximumFractionDigits: 6 })} LP`}
+          positionValue={``}
+          token0Logo={p.token0Logo}
+          token1Logo={p.token1Logo}
+        />
+      ))}
+    </VStack>
   );
 }
-
-
-

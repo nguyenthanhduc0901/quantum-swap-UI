@@ -1,16 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Box, Button, HStack, Image, Input, Text, Flex, Skeleton } from "@chakra-ui/react";
+import { Global, css } from "@emotion/react";
+import {
+  Box,
+  Button,
+  Flex,
+  HStack,
+  Image,
+  Input,
+  Text,
+  Skeleton,
+  IconButton,
+  VStack, // Using VStack for better vertical alignment
+} from "@chakra-ui/react";
+import { FiSearch, FiX } from "react-icons/fi"; // Using react-icons to avoid chakra icons package
 import { useChainId, useReadContracts } from "wagmi";
 import { isAddress } from "viem";
 import { type TokenInfo } from "@/constants/tokens";
 import { useTokenList, saveCustomToken } from "@/hooks/useTokenList";
 
-// Minimal ERC20 ABI for metadata reads
+// ABI remains the same
 const ERC20_ABI = [
-  { name: "symbol",   type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
-  { name: "name",     type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { name: "symbol", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+  { name: "name", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
   { name: "decimals", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
 ] as const;
 
@@ -25,25 +38,22 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
   const { tokens, isLoading } = useTokenList();
   const [query, setQuery] = useState("");
 
-  // Custom token discovery if search is an address
+  // Logic for custom token discovery remains the same
   const addr = useMemo(() => (isAddress(query.trim()) ? (query.trim() as `0x${string}`) : undefined), [query]);
-  const erc20Calls = useMemo(() => {
-    if (!addr) return [] as any[];
-    return [
-      { address: addr, abi: ERC20_ABI as any, functionName: "symbol" as const },
-      { address: addr, abi: ERC20_ABI as any, functionName: "name" as const },
-      { address: addr, abi: ERC20_ABI as any, functionName: "decimals" as const },
-    ];
-  }, [addr]);
+  const erc20Calls = useMemo(() => !addr ? [] : [
+    { address: addr, abi: ERC20_ABI, functionName: "symbol" },
+    { address: addr, abi: ERC20_ABI, functionName: "name" },
+    { address: addr, abi: ERC20_ABI, functionName: "decimals" },
+  ], [addr]);
   const customReads = useReadContracts({ contracts: erc20Calls, query: { enabled: Boolean(addr) } });
   const customToken: TokenInfo | undefined = useMemo(() => {
     if (!addr || !customReads.data || customReads.data.some((d) => d.status !== "success")) return undefined;
     const [sym, nm, dec] = customReads.data.map((d) => d.result) as [string, string, number];
-    const exists = tokens.some((t) => t.address.toLowerCase() === addr.toLowerCase());
-    if (exists) return undefined;
-    return { address: addr, symbol: sym, name: nm, decimals: Number(dec) } as TokenInfo;
+    if (tokens.some((t) => t.address.toLowerCase() === addr.toLowerCase())) return undefined;
+    return { address: addr, symbol: sym, name: nm, decimals: Number(dec) };
   }, [addr, customReads.data, tokens]);
 
+  // Filtering logic remains the same
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return tokens;
@@ -51,66 +61,162 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
       t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.address.toLowerCase() === q
     );
   }, [query, tokens]);
+  
+  // Clear search on close
+  useEffect(() => {
+    if (isOpen) {
+      setQuery("");
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <Box position="fixed" inset={0} bg="blackAlpha.600" zIndex={1000} onClick={onClose}>
-      <Box
+    <>
+      <Global styles={css`
+        /* Scoped nice scrollbar for token list */
+        .qs-scrollbar {
+          scrollbar-width: thin; /* Firefox */
+          scrollbar-color: #00d1b2 rgba(255, 255, 255, 0.08);
+        }
+        .qs-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .qs-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 9999px;
+        }
+        .qs-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #0052FF, #00D1B2);
+          border-radius: 9999px;
+          border: 2px solid rgba(15, 25, 40, 0.9);
+        }
+        .qs-scrollbar::-webkit-scrollbar-thumb:hover {
+          filter: brightness(1.1);
+        }
+      `} />
+      <Flex
+      position="fixed"
+      inset={0}
+      bg="blackAlpha.700"
+      backdropFilter="blur(8px)" // Blur the background page
+      zIndex={1000}
+      justify="center"
+      align="center"
+      onClick={onClose}
+    >
+      <VStack
         onClick={(e) => e.stopPropagation()}
-        bg="cardBg"
-        borderWidth="1px"
-        borderColor="cardBorder"
-        rounded="xl"
-        boxShadow="card"
+        // Glassmorphism style for the modal
+        bg="rgba(23, 35, 53, 0.75)"
+        backdropFilter="blur(15px)"
+        border="1px solid"
+        borderColor="rgba(255, 255, 255, 0.05)"
+        rounded="2xl" // Softer corners
+        boxShadow="0 10px 30px rgba(0,0,0,0.3)"
         w="full"
         maxW="420px"
-        mx="auto"
-        mt="15vh"
-        p={4}
+        p={6} // More padding
+        gap={4}
+        align="stretch"
       >
-        <Text fontWeight="bold" mb={3} fontSize="lg">
-          Select a token
-        </Text>
-        <Flex direction="column" align="stretch" gap={3} pb={2}>
-          <Input placeholder="Search name / symbol / address" value={query} onChange={(e) => setQuery(e.target.value)} />
-          {isLoading ? (
-            <>
-              {[...Array(6)].map((_, i) => <Skeleton key={i} height="36px" />)}
-            </>
-          ) : (
-            <Flex direction="column" align="stretch" gap={1} maxH="320px" overflowY="auto">
-              {customToken && (
-                <Button
-                  key={`custom-${customToken.address}`}
-                  onClick={() => { saveCustomToken(chainId, customToken); onTokenSelect(customToken); onClose(); }}
-                  variant="outline"
-                  colorScheme="yellow"
-                  justifyContent="flex-start"
-                >
-                  <HStack gap={3}>
-                    <Box boxSize="20px" bg="yellow.300" rounded="full" />
-                    <Text fontWeight="semibold">Import {customToken.symbol}</Text>
-                    <Text color="gray.500">{customToken.name}</Text>
-                  </HStack>
-                </Button>
-              )}
-              {filtered.map((t) => (
-                <Button key={t.address} onClick={() => { onTokenSelect(t); onClose(); }} variant="ghost" justifyContent="flex-start" _hover={{ bg: "whiteAlpha.200" }}>
-                  <HStack gap={3}>
-                    {t.logoURI ? <Image src={t.logoURI} alt={t.symbol} boxSize="20px" /> : <Box boxSize="20px" bg="gray.200" rounded="full" />}
-                    <Text fontWeight="semibold">{t.symbol}</Text>
-                    <Text color="gray.500">{t.name}</Text>
-                  </HStack>
-                </Button>
-              ))}
-            </Flex>
-          )}
+        {/* Header with Title and Close Button */}
+        <Flex justify="space-between" align="center">
+          <Text fontWeight="bold" fontSize="xl" color="whiteAlpha.900">
+            Select a token
+          </Text>
+          <IconButton
+            aria-label="Close modal"
+            onClick={onClose}
+            size="sm"
+            variant="ghost"
+            color="whiteAlpha.600"
+            _hover={{ bg: "whiteAlpha.100", color: "white" }}
+          >
+            <Box as={FiX} />
+          </IconButton>
         </Flex>
-        <Button onClick={onClose} mt={2} w="full" variant="outline" colorScheme="brand">Close</Button>
-      </Box>
-    </Box>
+
+        {/* Search Input */}
+        <Box position="relative">
+          <Box as={FiSearch} color="whiteAlpha.400" boxSize={4} position="absolute" left={3} top="50%" transform="translateY(-50%)" pointerEvents="none" />
+          <Input
+            placeholder="Search name or paste address"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            bg="blackAlpha.400"
+            border="1px solid"
+            borderColor="rgba(255, 255, 255, 0.08)"
+            _hover={{ borderColor: "rgba(255, 255, 255, 0.15)" }}
+            _focus={{
+              borderColor: "#00FFC2", // Brand color focus
+              boxShadow: "none",
+            }}
+            pl={10}
+            rounded="lg"
+            color="white"
+          />
+        </Box>
+
+        {/* Token List */}
+        {isLoading ? (
+          <VStack gap={2}>
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} height="56px" rounded="lg" />
+            ))}
+          </VStack>
+        ) : (
+          <VStack
+            gap={2}
+            maxH="40vh" // Increased height
+            overflowY="auto"
+            className="qs-scrollbar"
+            align="stretch"
+          >
+            {customToken && (
+              <Button
+                onClick={() => { saveCustomToken(chainId, customToken); onTokenSelect(customToken); onClose(); }}
+                variant="solid"
+                colorScheme="yellow"
+                color="black"
+                justifyContent="space-between"
+                w="full"
+                h="auto" p={3}
+              >
+                <HStack>
+                  <Box boxSize="28px" bg="yellow.200" rounded="full" />
+                  <VStack align="flex-start" gap={0}>
+                    <Text fontWeight="semibold">Import {customToken.symbol}</Text>
+                    <Text fontSize="xs" fontWeight="normal" color="blackAlpha.700">Found by address</Text>
+                  </VStack>
+                </HStack>
+                <Text fontSize="sm" fontWeight="bold">Import</Text>
+              </Button>
+            )}
+            {filtered.map((t) => (
+              <Button
+                key={t.address}
+                onClick={() => { onTokenSelect(t); onClose(); }}
+                variant="ghost"
+                justifyContent="flex-start"
+                w="full"
+                h="auto" p={3}
+                rounded="lg"
+                _hover={{ bg: "whiteAlpha.100" }}
+              >
+                <HStack gap={3}>
+                  <Image src={t.logoURI} alt={t.symbol} boxSize="28px" rounded="full" />
+                  <VStack align="flex-start" gap={0}>
+                    <Text fontWeight="semibold" color="whiteAlpha.900">{t.symbol}</Text>
+                    <Text fontSize="sm" fontWeight="normal" color="whiteAlpha.600">{t.name}</Text>
+                  </VStack>
+                </HStack>
+              </Button>
+            ))}
+          </VStack>
+        )}
+      </VStack>
+    </Flex>
+    </>
   );
 }
-
-
