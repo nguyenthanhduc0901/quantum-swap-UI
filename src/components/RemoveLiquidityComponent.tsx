@@ -80,12 +80,31 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const lpBalance = lpBalanceRaw ?? 0n;
   const allowance = allowanceRaw ?? 0n;
 
+  // Read token metadata on-chain for accuracy (fallback to token list)
+  const ERC20_META = [
+    { name: "symbol", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
+    { name: "decimals", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
+  ] as const satisfies Abi;
+  const metaReads = useReadContracts({
+    contracts: token0 && token1 ? [
+      { address: token0 as `0x${string}`, abi: ERC20_META as Abi, functionName: "symbol" as const },
+      { address: token0 as `0x${string}`, abi: ERC20_META as Abi, functionName: "decimals" as const },
+      { address: token1 as `0x${string}`, abi: ERC20_META as Abi, functionName: "symbol" as const },
+      { address: token1 as `0x${string}`, abi: ERC20_META as Abi, functionName: "decimals" as const },
+    ] : [],
+    query: { enabled: Boolean(token0 && token1) }
+  });
+
   const t0Meta = token0 ? tokens.find(t => t.address.toLowerCase() === token0.toLowerCase()) : undefined;
   const t1Meta = token1 ? tokens.find(t => t.address.toLowerCase() === token1.toLowerCase()) : undefined;
-  const symbol0 = t0Meta?.symbol ?? "TKN0";
-  const symbol1 = t1Meta?.symbol ?? "TKN1";
-  const decimals0 = t0Meta?.decimals ?? 18;
-  const decimals1 = t1Meta?.decimals ?? 18;
+  const sym0OnChain = (metaReads.data?.[0]?.result as string) ?? undefined;
+  const dec0OnChain = (metaReads.data?.[1]?.result as number | undefined) ?? undefined;
+  const sym1OnChain = (metaReads.data?.[2]?.result as string) ?? undefined;
+  const dec1OnChain = (metaReads.data?.[3]?.result as number | undefined) ?? undefined;
+  const symbol0 = sym0OnChain ?? t0Meta?.symbol ?? "TKN0";
+  const symbol1 = sym1OnChain ?? t1Meta?.symbol ?? "TKN1";
+  const decimals0 = (dec0OnChain !== undefined ? Number(dec0OnChain) : t0Meta?.decimals) ?? 18;
+  const decimals1 = (dec1OnChain !== undefined ? Number(dec1OnChain) : t1Meta?.decimals) ?? 18;
   const logo0 = t0Meta?.logoURI;
   const logo1 = t1Meta?.logoURI;
 
@@ -102,12 +121,15 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const shareFloat = totalSupply > 0n ? (Number(amountLpToBurn) / Number(totalSupply)) : 0;
   const est0Float = reserve0Float * shareFloat;
   const est1Float = reserve1Float * shareFloat;
-  const amount0Display = (Number(formatUnits(amount0ToReceive, decimals0)) || est0Float).toLocaleString(undefined, { maximumFractionDigits: 6 });
-  const amount1Display = (Number(formatUnits(amount1ToReceive, decimals1)) || est1Float).toLocaleString(undefined, { maximumFractionDigits: 6 });
+  const a0Num = Number(formatUnits(amount0ToReceive, decimals0));
+  const a1Num = Number(formatUnits(amount1ToReceive, decimals1));
+  const amount0Display = ((a0Num > 0 ? a0Num : est0Float) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
+  const amount1Display = ((a1Num > 0 ? a1Num : est1Float) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
 
   const hasData = Boolean(reserves && totalSupplyRaw !== undefined);
   const showEstimates = true;
-  const isLoadingData = reads.isLoading;
+  const isLoadingMeta = metaReads.isLoading;
+  const isLoadingData = reads.isLoading || isLoadingMeta;
   const isLoadingPairOnly = reads.isLoading;
   const needsApproval = allowance < amountLpToBurn;
 
@@ -210,8 +232,8 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
 
         <VStack p={4} bg="blackAlpha.400" rounded="xl" border="1px solid" borderColor="rgba(255, 255, 255, 0.08)" spacing={4} align="stretch">
           <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
-          <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={false} />
-          <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={false} />
+          <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={isLoadingData} />
+          <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={isLoadingData} />
         </VStack>
 
         <VStack spacing={2} align="stretch">
