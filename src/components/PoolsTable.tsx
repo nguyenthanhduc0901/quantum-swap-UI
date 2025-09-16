@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 import { Box, HStack, VStack, Text, Skeleton, Image } from "@chakra-ui/react";
-import { TokenImage } from "@/components/ui/TokenImage";
+// import { TokenImage } from "@/components/ui/TokenImage";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useChainId, useReadContract, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
 import { quantumSwapFactoryAbi as factoryAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts } from "@/constants/addresses";
 import { useTokenList } from "@/hooks/useTokenList";
-import NextLink from "next/link";
+// import NextLink from "next/link";
 
 export function PoolsTable() {
   const chainId = useChainId() ?? 31337;
@@ -30,18 +30,21 @@ export function PoolsTable() {
     query: { enabled: pairAddresses.length > 0 }
   });
 
-  const items = useMemo(() => pairAddresses.map((p, i) => {
-    const t0 = reads.data?.[i*4]?.result as `0x${string}` | undefined;
-    const t1 = reads.data?.[i*4+1]?.result as `0x${string}` | undefined;
-    const reserves = reads.data?.[i*4+2]?.result as [bigint, bigint, number] | undefined;
-    const total = reads.data?.[i*4+3]?.result as bigint | undefined;
-    const token0 = tokens.find(t => t.address.toLowerCase() === (t0 || "").toLowerCase());
-    const token1 = tokens.find(t => t.address.toLowerCase() === (t1 || "").toLowerCase());
-    const r0 = token0 && reserves ? Number(reserves[0]) / 10 ** token0.decimals : undefined;
-    const r1 = token1 && reserves ? Number(reserves[1]) / 10 ** token1.decimals : undefined;
-    const tvl = (r0 ?? 0) + (r1 ?? 0); // placeholder without USD
-    return { pair: p, token0, token1, r0, r1, tvl, totalSupply: total };
-  }), [pairAddresses, reads.data, tokens]);
+  const items = useMemo(() => {
+    const stablePairAddresses = pairAddresses;
+    return stablePairAddresses.map((p, i) => {
+      const t0 = reads.data?.[i*4]?.result as `0x${string}` | undefined;
+      const t1 = reads.data?.[i*4+1]?.result as `0x${string}` | undefined;
+      const reserves = reads.data?.[i*4+2]?.result as [bigint, bigint, number] | undefined;
+      const total = reads.data?.[i*4+3]?.result as bigint | undefined;
+      const token0 = tokens.find(t => t.address.toLowerCase() === (t0 || "").toLowerCase());
+      const token1 = tokens.find(t => t.address.toLowerCase() === (t1 || "").toLowerCase());
+      const r0 = token0 && reserves ? Number(reserves[0]) / 10 ** token0.decimals : undefined;
+      const r1 = token1 && reserves ? Number(reserves[1]) / 10 ** token1.decimals : undefined;
+      const tvl = (r0 ?? 0) + (r1 ?? 0); // placeholder without USD
+      return { pair: p, token0, token1, r0, r1, tvl, totalSupply: total };
+    });
+  }, [pairAddresses, reads.data, tokens]);
 
   const isLoading = lenRead.isLoading || pairsRes.isLoading || reads.isLoading;
 

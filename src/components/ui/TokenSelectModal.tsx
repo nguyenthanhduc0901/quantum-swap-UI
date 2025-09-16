@@ -15,7 +15,7 @@ import {
   VStack, // Using VStack for better vertical alignment
 } from "@chakra-ui/react";
 import { FiSearch, FiX } from "react-icons/fi"; // Using react-icons to avoid chakra icons package
-import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
+import { useAccount, useChainId, useReadContracts } from "wagmi";
 import { isAddress } from "viem";
 import { type TokenInfo } from "@/constants/tokens";
 import { useTokenList, saveCustomToken } from "@/hooks/useTokenList";
@@ -37,7 +37,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
   const chainId = useChainId() ?? 31337;
   const { tokens, isLoading } = useTokenList();
   const [query, setQuery] = useState("");
-  const { address } = useAccount();
+  // const { address } = useAccount();
 
   // Logic for custom token discovery remains the same
   const addr = useMemo(() => (isAddress(query.trim()) ? (query.trim() as `0x${string}`) : undefined), [query]);

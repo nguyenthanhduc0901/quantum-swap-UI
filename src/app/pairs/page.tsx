@@ -6,7 +6,7 @@ import { useChainId, useReadContract, useReadContracts } from "wagmi";
 import type { Abi } from "viem";
 import { quantumSwapFactoryAbi as factoryAbi, quantumSwapPairAbi as pairAbi } from "@/constants/abi/minimal";
 import { getContracts } from "@/constants/addresses";
-import NextLink from "next/link";
+// import NextLink from "next/link";
 import { useTokenList } from "@/hooks/useTokenList";
 import { GradientButton } from "@/components/ui/GradientButton";
 

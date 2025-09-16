@@ -52,7 +52,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ChakraProvider value={system ?? (defaultSystem as any)}>
+    <ChakraProvider value={system ?? defaultSystem}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>

@@ -47,7 +47,7 @@ export function SwapComponent({ onTokenChange }: SwapComponentProps) {
   const account = useAccount();
   const contracts = getContracts(chainId);
   const router = contracts?.QuantumSwapRouter as `0x${string}`;
-  const _weth = contracts?.WETH as `0x${string}`;
+  // const _weth = contracts?.WETH as `0x${string}`;
   const defaults = getDefaultTokens(chainId);
   const [inputToken, setInputToken] = useState<TokenInfo | null>(defaults[0]);
   const [outputToken, setOutputToken] = useState<TokenInfo | null>(defaults[1]);
@@ -61,7 +61,7 @@ export function SwapComponent({ onTokenChange }: SwapComponentProps) {
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const { slippageTolerance, deadlineMinutes, setSlippageTolerance, setDeadlineMinutes } = useSettings();
   const { open: isSettingsOpen, onOpen: onOpenSettings, onClose: onCloseSettings } = useDisclosure();
-  const { open: _isDetailsOpen } = useDisclosure();
+  // const { open: _isDetailsOpen } = useDisclosure();
   const { open: isConfirmOpen, onOpen: onOpenConfirm, onClose: onCloseConfirm } = useDisclosure();
   const publicClient = usePublicClient();
   const [gasLimit, setGasLimit] = useState<bigint | undefined>(undefined);
@@ -137,7 +137,7 @@ export function SwapComponent({ onTokenChange }: SwapComponentProps) {
       } catch {}
     })();
     return () => { stale = true; };
-  }, [pair, publicClient, swapEvent, timeframe]);
+  }, [pair, publicClient, swapEvent, timeframe, approxBlocks]);
 
   useWatchContractEvent({
     address: pair,

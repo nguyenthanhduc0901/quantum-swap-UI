@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import {
-  Box, Flex, Spinner, Text, VStack, Heading, Skeleton, Button, Link as ChakraLink,
+  Text, VStack, Heading, Skeleton, Link as ChakraLink,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";

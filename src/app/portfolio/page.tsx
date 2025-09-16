@@ -103,11 +103,11 @@ export default function PortfolioPage() {
   });
   const wethUsdPair = (wethPairReads.data?.[0]?.result as `0x${string}` | undefined) || (wethPairReads.data?.[1]?.result as `0x${string}` | undefined);
   const wethReservesRead = useReadContract({ address: wethUsdPair, abi: pairAbi as Abi, functionName: "getReserves", query: { enabled: Boolean(wethUsdPair), refetchInterval: 15_000 } });
-  const _wethUsdPrice = useMemo(() => {
-    if (!weth || !(usdc || dai) || !wethReservesRead.data) return undefined;
-    const [_r0, _r1] = wethReservesRead.data as unknown as [bigint, bigint, number];
-    return undefined;
-  }, [wethReservesRead.data, weth, usdc, dai]);
+  // const _wethUsdPrice = useMemo(() => {
+  //   if (!weth || !(usdc || dai) || !wethReservesRead.data) return undefined;
+  //   const [_r0, _r1] = wethReservesRead.data as unknown as [bigint, bigint, number];
+  //   return undefined;
+  // }, [wethReservesRead.data, weth, usdc, dai]);
 
   // For efficiency build pairs for all tokens vs USDC/DAI/WETH
   const pricePairCalls = useMemo(() => {

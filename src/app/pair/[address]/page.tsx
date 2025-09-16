@@ -15,7 +15,7 @@ import { GradientButton } from "@/components/ui/GradientButton";
 export default function PairDetailPage() {
   const params = useParams<{ address: `0x${string}` }>();
   const pair = params?.address as `0x${string}` | undefined;
-  const _chainId = useChainId() ?? 31337;
+  // const _chainId = useChainId() ?? 31337;
   const publicClient = usePublicClient();
 
   const reserves = useReadContract({ address: pair, abi: pairAbi as Abi, functionName: "getReserves", query: { enabled: Boolean(pair) } });

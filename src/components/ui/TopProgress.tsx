@@ -17,7 +17,7 @@ export function TopProgress() {
     NProgress.start();
     const t = setTimeout(() => NProgress.done(), 300); // finish quickly for client transitions
     return () => clearTimeout(t);
-  }, [pathname, search?.toString()]);
+  }, [pathname, search]);
 
   return null;
 }

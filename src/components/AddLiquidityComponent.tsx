@@ -74,14 +74,14 @@ export function AddLiquidityComponent() {
       if (!tokenA || !router) return;
       const hash = await writeContractAsync({ address: tokenA.address, abi: ERC20_APPROVE as unknown as Abi, functionName: "approve", args: [router, MAX_UINT] });
       setTxHash(hash);
-    } catch (e) { /* user rejected or error */ }
+    } catch { /* user rejected or error */ }
   }
   async function onApproveB() {
     try {
       if (!tokenB || !router) return;
       const hash = await writeContractAsync({ address: tokenB.address, abi: ERC20_APPROVE as unknown as Abi, functionName: "approve", args: [router, MAX_UINT] });
       setTxHash(hash);
-    } catch (e) { /* user rejected or error */ }
+    } catch { /* user rejected or error */ }
   }
   async function onSupply() {
     try {
@@ -109,7 +109,7 @@ export function AddLiquidityComponent() {
       const deadline = BigInt(Math.floor(Date.now() / 1000)) + BigInt(deadlineMinutes) * 60n;
       const hash = await writeContractAsync({ address: router, abi: routerAbi as Abi, functionName: "addLiquidity", args: [tokenA.address, tokenB.address, amountAWei, amountBWei, amountAMin, amountBMin, account.address, deadline] });
       setTxHash(hash);
-    } catch (e) { /* user rejected or error */ }
+    } catch { /* user rejected or error */ }
   }
   
   const mainCta = useMemo(() => {
@@ -119,10 +119,10 @@ export function AddLiquidityComponent() {
     if (step === "approveA") return { label: `Approve ${tokenA.symbol}`, action: onApproveA };
     if (step === "approveB") return { label: `Approve ${tokenB.symbol}`, action: onApproveB };
     return { label: "Supply", action: onSupply };
-  }, [account.isConnected, tokenA, tokenB, amountA, amountB, step, sameToken]);
+  }, [account.isConnected, tokenA, tokenB, amountA, amountB, step, sameToken, onApproveA, onApproveB, onSupply]);
   
   const bothEntered = Boolean(Number(amountA) > 0 && Number(amountB) > 0);
-  const canSubmit = Boolean(tokenA && tokenB && bothEntered && mainCta.action);
+  // const canSubmit = Boolean(tokenA && tokenB && bothEntered && mainCta.action);
 
   // --- GIAO DIỆN ĐÃ ĐƯỢC THIẾT KẾ LẠI ---
   return (

@@ -136,8 +136,8 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const res0Display = (reserve0Float || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
   const res1Display = (reserve1Float || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
 
-  const hasData = Boolean(reserves && totalSupplyRaw !== undefined);
-  const showEstimates = true;
+  // const hasData = Boolean(reserves && totalSupplyRaw !== undefined);
+  // const showEstimates = true;
   const isLoadingMeta = metaReads.isLoading;
   const isLoadingData = reads.isLoading || isLoadingMeta;
   const isLoadingPairOnly = reads.isLoading;

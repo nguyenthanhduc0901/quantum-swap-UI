@@ -29,7 +29,7 @@ export default function PoolPage() {
         >
           {/* Cột bên trái: Danh sách vị thế */}
           <GridItem order={{ base: 2, lg: 1 }}>
-            <Tabs.Root value={tab} onValueChange={(d: any) => setTab(String(d.value || d))}>
+            <Tabs.Root value={tab} onValueChange={(d: { value?: string } | string) => setTab(String(typeof d === 'string' ? d : d.value || d))}>
               <Tabs.List style={{ marginBottom: 20, display: 'flex', gap: 8, border: 'none', borderBottom: 'none', boxShadow: 'none' }}>
                 <Tabs.Trigger
                   value="my"

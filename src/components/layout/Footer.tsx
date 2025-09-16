@@ -122,7 +122,7 @@ export function Footer() {
 }
 
 // Component con cho các Icon Mạng xã hội để tránh lặp code
-function IconLink({ "aria-label": ariaLabel, icon }: { "aria-label": string; icon: React.ReactElement }) {
+function IconLink({ "aria-label": _ariaLabel, icon }: { "aria-label": string; icon: React.ReactElement }) {
   return (
     <Flex
       as="span"
