@@ -41,7 +41,7 @@ export function AddLiquidityComponent() {
   const [amountB, setAmountB] = useState("");
   const [selecting, setSelecting] = useState<"A" | "B" | null>(null);
 
-  const { priceAB, priceBA, shareOfPool, reserves } = useLiquidityCalculations({ tokenA, tokenB, amountA, amountB });
+  const { priceAB, priceBA, shareOfPool, reserves, totalSupply } = useLiquidityCalculations({ tokenA, tokenB, amountA, amountB });
   const sameToken = useMemo(() => tokenA && tokenB && tokenA.address.toLowerCase() === tokenB.address.toLowerCase(), [tokenA, tokenB]);
 
   // Không tự động điền. Chỉ hiển thị thông tin khi cả hai trường đã nhập.
@@ -196,6 +196,18 @@ export function AddLiquidityComponent() {
             } />
             {bothEntered && typeof shareOfPool === "number" && (
               <InfoRow label="Share of Pool" value={`${shareOfPool.toFixed(4)}%`} />
+            )}
+            {tokenA && tokenB && reserves && totalSupply !== undefined && (
+              <InfoRow label="Min LP minted" value={(() => {
+                try {
+                  const aWei = parseUnits((amountA || "0") as `${string}`, tokenA.decimals);
+                  const bWei = parseUnits((amountB || "0") as `${string}`, tokenB.decimals);
+                  const lpFromA = totalSupply && reserves.reserveA > 0n ? (aWei * totalSupply) / reserves.reserveA : 0n;
+                  const lpFromB = totalSupply && reserves.reserveB > 0n ? (bWei * totalSupply) / reserves.reserveB : 0n;
+                  const lp = lpFromA === 0n ? lpFromB : lpFromB === 0n ? lpFromA : (lpFromA < lpFromB ? lpFromA : lpFromB);
+                  return lp > 0n ? `${Number(lp) / 1e18} LP` : "-";
+                } catch { return "-"; }
+              })()} />
             )}
           </VStack>
         )}

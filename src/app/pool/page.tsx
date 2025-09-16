@@ -1,9 +1,13 @@
 "use client";
-import { Container, Grid, GridItem, Heading, Text, VStack } from "@chakra-ui/react";
+import { useState } from "react";
+import { Container, Grid, GridItem, Heading, Text, VStack, Tabs } from "@chakra-ui/react";
+import { PoolsTable } from "../../components/PoolsTable";
 import { YourLiquidityComponent } from "@/components/YourLiquidityComponent";
 import { AddLiquidityComponent } from "@/components/AddLiquidityComponent";
 
 export default function PoolPage() {
+  const [tab, setTab] = useState("my");
+  const GRAD = "linear-gradient(90deg, #0052FF 0%, #00D1B2 100%)";
   return (
     <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
       <VStack align="stretch" gap={{ base: 8, md: 10 }}>
@@ -25,9 +29,42 @@ export default function PoolPage() {
         >
           {/* Cột bên trái: Danh sách vị thế */}
           <GridItem order={{ base: 2, lg: 1 }}>
-            {/* 3. Loại bỏ Box wrapper không cần thiết */}
-            {/* YourLiquidityComponent đã có style riêng, tự nó là một card */}
-            <YourLiquidityComponent />
+            <Tabs.Root value={tab} onValueChange={(d: any) => setTab(String(d.value || d))}>
+              <Tabs.List style={{ marginBottom: 20, display: 'flex', gap: 8, border: 'none', borderBottom: 'none', boxShadow: 'none' }}>
+                <Tabs.Trigger
+                  value="my"
+                  style={{
+                    borderRadius: 9999,
+                    padding: '8px 16px',
+                    backgroundImage: tab === 'my' ? GRAD : 'none',
+                    color: tab === 'my' ? '#fff' : 'rgba(255,255,255,0.95)',
+                    border: tab === 'my' ? 'none' : '1px solid rgba(255,255,255,0.25)',
+                    boxShadow: tab === 'my' ? '0 6px 16px rgba(0, 209, 178, 0.25)' : 'none',
+                  }}
+                >
+                  My Positions
+                </Tabs.Trigger>
+                <Tabs.Trigger
+                  value="all"
+                  style={{
+                    borderRadius: 9999,
+                    padding: '8px 16px',
+                    backgroundImage: tab === 'all' ? GRAD : 'none',
+                    color: tab === 'all' ? '#fff' : 'rgba(255,255,255,0.95)',
+                    border: tab === 'all' ? 'none' : '1px solid rgba(255,255,255,0.25)',
+                    boxShadow: tab === 'all' ? '0 6px 16px rgba(0, 209, 178, 0.25)' : 'none',
+                  }}
+                >
+                  All Pools
+                </Tabs.Trigger>
+              </Tabs.List>
+              <Tabs.Content value="my">
+                <YourLiquidityComponent />
+              </Tabs.Content>
+              <Tabs.Content value="all">
+                <PoolsTable />
+              </Tabs.Content>
+            </Tabs.Root>
           </GridItem>
 
           {/* Cột bên phải: Thêm thanh khoản */}

@@ -15,7 +15,7 @@ import {
   VStack, // Using VStack for better vertical alignment
 } from "@chakra-ui/react";
 import { FiSearch, FiX } from "react-icons/fi"; // Using react-icons to avoid chakra icons package
-import { useChainId, useReadContracts } from "wagmi";
+import { useAccount, useChainId, useReadContract, useReadContracts } from "wagmi";
 import { isAddress } from "viem";
 import { type TokenInfo } from "@/constants/tokens";
 import { useTokenList, saveCustomToken } from "@/hooks/useTokenList";
@@ -37,6 +37,7 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
   const chainId = useChainId() ?? 31337;
   const { tokens, isLoading } = useTokenList();
   const [query, setQuery] = useState("");
+  const { address } = useAccount();
 
   // Logic for custom token discovery remains the same
   const addr = useMemo(() => (isAddress(query.trim()) ? (query.trim() as `0x${string}`) : undefined), [query]);
@@ -61,6 +62,9 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
       t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || t.address.toLowerCase() === q
     );
   }, [query, tokens]);
+
+  // Simple verified set: default + generated local considered verified; custom tokens are unverified
+  const verifiedSet = useMemo(() => new Set(tokens.map(t => t.address.toLowerCase())), [tokens]);
   
   // Clear search on close
   useEffect(() => {
@@ -208,7 +212,12 @@ export function TokenSelectModal({ isOpen, onClose, onTokenSelect }: Props) {
                   <Image src={t.logoURI} alt={t.symbol} boxSize="28px" rounded="full" />
                   <VStack align="flex-start" gap={0}>
                     <Text fontWeight="semibold" color="whiteAlpha.900">{t.symbol}</Text>
-                    <Text fontSize="sm" fontWeight="normal" color="whiteAlpha.600">{t.name}</Text>
+                    <HStack gap={2}>
+                      <Text fontSize="sm" fontWeight="normal" color="whiteAlpha.600">{t.name}</Text>
+                      <Box as="span" px={1.5} py={0.5} rounded="md" bg={verifiedSet.has(t.address.toLowerCase()) ? "green.900" : "yellow.900"} color={verifiedSet.has(t.address.toLowerCase()) ? "green.300" : "yellow.300"} fontSize="10px">
+                        {verifiedSet.has(t.address.toLowerCase()) ? "verified" : "unknown"}
+                      </Box>
+                    </HStack>
                   </VStack>
                 </HStack>
               </Button>

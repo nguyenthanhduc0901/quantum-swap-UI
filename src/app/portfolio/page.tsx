@@ -83,7 +83,7 @@ export default function PortfolioPage() {
       amount0: token0 ? share0 / 10 ** token0.decimals : 0,
       amount1: token1 ? share1 / 10 ** token1.decimals : 0,
     };
-  }).filter(Boolean) as Array<{ pair: `0x${string}`; balance: bigint; token0?: { address: `0x${string}`; symbol: string; decimals: number } | undefined; token1?: { address: `0x${string}`; symbol: string; decimals: number } | undefined; amount0: number; amount1: number }>, [pairAddresses, lpReads.data, tokens]);
+  }).filter(Boolean) as Array<{ pair: `0x${string}`; balance: bigint; token0?: { address: `0x${string}`; symbol: string; decimals: number; logoURI?: string } | undefined; token1?: { address: `0x${string}`; symbol: string; decimals: number; logoURI?: string } | undefined; amount0: number; amount1: number }>, [pairAddresses, lpReads.data, tokens]);
 
   const isLoading = loadingList || tokenReads.isLoading || lenRead.isLoading || pairsRes.isLoading || lpReads.isLoading;
 
@@ -341,10 +341,16 @@ export default function PortfolioPage() {
                     <GridItem key={it.pair}>
                       <Box bg="rgba(23,35,53,0.6)" backdropFilter="blur(12px)" border="1px solid" borderColor="rgba(255,255,255,0.08)" rounded="xl" p={4}>
                         <HStack justify="space-between" align="center">
-                          <VStack align="flex-start" gap={0}>
-                            <Text color="white" fontWeight="bold">{pairName(it)}</Text>
-                            <Text color="whiteAlpha.700" fontSize="xs">{short(it.pair)}</Text>
-                          </VStack>
+                          <HStack gap={3} align="center">
+                            <HStack gap={-2}>
+                              <TokenLogo src={it.token0?.logoURI} />
+                              <TokenLogo src={it.token1?.logoURI} />
+                            </HStack>
+                            <VStack align="flex-start" gap={0}>
+                              <Text color="white" fontWeight="bold">{pairName(it)}</Text>
+                              <Text color="whiteAlpha.700" fontSize="xs">{short(it.pair)}</Text>
+                            </VStack>
+                          </HStack>
                           <VStack align="flex-end" gap={0}>
                             <Text color="whiteAlpha.800" fontSize="sm">{fmt(it.amount0)} {it.token0?.symbol} • {fmt(it.amount1)} {it.token1?.symbol}</Text>
                           </VStack>

@@ -96,7 +96,7 @@ export function SettingsModal({
                 <Box color="whiteAlpha.700">%</Box>
               </HStack>
               <HStack gap={2}>
-                {[0.1, 0.5, 1].map((p) => (
+                {[0.1, 0.5, 1, 2].map((p) => (
                   <Button
                     key={p}
                     size="sm"

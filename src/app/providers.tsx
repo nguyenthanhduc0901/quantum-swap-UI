@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 import system from "../styles/theme";
 import { ToastProvider } from "../contexts/ToastContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
@@ -52,7 +52,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ChakraProvider value={system}>
+    <ChakraProvider value={system ?? (defaultSystem as any)}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <ToastProvider>

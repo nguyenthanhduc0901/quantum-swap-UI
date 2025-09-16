@@ -21,7 +21,7 @@ function InfoRow({ label, value }: { label: string, value: React.ReactNode }) {
     <Flex justify="space-between" align="center">
       <Text color="whiteAlpha.600" fontSize="sm">{label}</Text>
       {isPrimitive ? (
-        <Text color="whiteAlpha.800" fontSize="sm">{value as any}</Text>
+        <Text color="whiteAlpha.800" fontSize="sm">{String(value)}</Text>
       ) : (
         <Box>{value}</Box>
       )}
@@ -33,7 +33,7 @@ function TokenAmountDisplay({ symbol, amount, logo, isLoading }: { symbol: strin
   return (
     <Flex justify="space-between" align="center" w="full">
       <HStack>
-        <Image src={logo} boxSize="28px" rounded="full" />
+        <Image src={logo} alt={symbol} boxSize="28px" rounded="full" />
         <Text fontSize="lg" fontWeight="bold" color="white">{symbol}</Text>
       </HStack>
       {isLoading ? (
@@ -141,7 +141,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
   const isLoadingMeta = metaReads.isLoading;
   const isLoadingData = reads.isLoading || isLoadingMeta;
   const isLoadingPairOnly = reads.isLoading;
-  const isLoadingAmounts = reads.isLoading || (reads as any).isFetching; // amounts should not wait for metadata
+  const isLoadingAmounts = reads.isLoading; // amounts should not wait for metadata
   const needsApproval = allowance < amountLpToBurn;
 
   const { writeContractAsync } = useWriteContract();
@@ -192,7 +192,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
               max={100}
               step={1}
               value={percentageToRemove}
-              onChange={(e: any) => setPercentageToRemove(Number(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPercentageToRemove(Number(e.target.value))}
               w="100%"
               css={{
                 WebkitAppearance: 'none',
@@ -204,7 +204,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
                 opacity: 0.9,
                 transition: 'opacity 0.2s',
                 '&:hover': { opacity: 1 },
-                '::-webkit-slider-thumb': {
+                '::WebkitSliderThumb': {
                   WebkitAppearance: 'none',
                   appearance: 'none',
                   width: '18px',
@@ -216,7 +216,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
                   cursor: 'pointer',
                   marginTop: '-6px',
                 },
-                '::-moz-range-thumb': {
+                '::MozRangeThumb': {
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
@@ -225,7 +225,7 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
                   boxShadow: '0 0 12px rgba(0,255,194,0.5)',
                   cursor: 'pointer',
                 },
-                '::-ms-thumb': {
+                '::MsThumb': {
                   width: '18px',
                   height: '18px',
                   borderRadius: '50%',
@@ -260,6 +260,17 @@ export function RemoveLiquidityComponent({ pairAddress, onClose }: Props) {
           <Text fontWeight="semibold" color="whiteAlpha.800">You will receive (estimated)</Text>
           <TokenAmountDisplay symbol={symbol0} amount={amount0Display} logo={logo0} isLoading={isLoadingAmounts} />
           <TokenAmountDisplay symbol={symbol1} amount={amount1Display} logo={logo1} isLoading={isLoadingAmounts} />
+          <VStack align="stretch" gap={1}>
+            <Text color="whiteAlpha.700" fontSize="sm">Minimum amounts after slippage</Text>
+            <Text color="whiteAlpha.800" fontSize="sm">{(() => {
+              const bps = Math.floor(slippageTolerance * 100);
+              const denom = 10000;
+              const min0 = (a0Num * (denom - bps)) / denom;
+              const min1 = (a1Num * (denom - bps)) / denom;
+              const fmt = (v: number) => v > 0 && v < 1e-6 ? "<0.000001" : v.toLocaleString(undefined, { maximumFractionDigits: 6 });
+              return `${fmt(min0)} ${symbol0} • ${fmt(min1)} ${symbol1}`;
+            })()}</Text>
+          </VStack>
         </VStack>
 
         <VStack gap={2} align="stretch">

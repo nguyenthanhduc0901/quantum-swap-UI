@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Heading,
@@ -74,8 +74,9 @@ interface ChartPanelProps {
 
 export function ChartPanel({ inputToken, outputToken }: ChartPanelProps) {
   // --- LOGIC (Không thay đổi) ---
-  const [data, setData] = useState(generateMockLineData(240, 2000));
+  const [data, setData] = useState(generateMockLineData(360, 2000));
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const timerRef = useRef<number | undefined>(undefined);
 
   const tokenPair = inputToken && outputToken ? `${inputToken.symbol} / ${outputToken.symbol}` : "WETH / USDC";
 
@@ -86,6 +87,29 @@ export function ChartPanel({ inputToken, outputToken }: ChartPanelProps) {
       setLastUpdated(new Date());
     }
   }, [inputToken, outputToken]);
+
+  // Realtime simulation: random walk with mild volatility
+  useEffect(() => {
+    // push a new point every 3 seconds
+    timerRef.current = window.setInterval(() => {
+      setData((prev) => {
+        if (!prev || prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        const t = Math.floor(Date.now() / 1000);
+        const drift = 0.0005; // upward drift
+        const vol = 0.008; // volatility
+        const rnd = (Math.random() - 0.5) * 2; // [-1,1]
+        const next = Math.max(0.01, last.value * (1 + drift + vol * rnd));
+        const nextPoint = { time: t, value: next };
+        const maxPoints = 2000;
+        const arr = prev.length >= maxPoints ? prev.slice(prev.length - (maxPoints - 1)) : prev.slice();
+        arr.push(nextPoint);
+        return arr;
+      });
+      setLastUpdated(new Date());
+    }, 3000) as unknown as number;
+    return () => { if (timerRef.current) window.clearInterval(timerRef.current); };
+  }, []);
 
   const lastPrice = data[data.length - 1]?.value ?? 0;
   const firstPrice = data[0]?.value ?? 0;

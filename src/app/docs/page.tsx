@@ -6,7 +6,7 @@ export default function DocsPage() {
     <Container maxW="container.lg" py={{ base: 8, md: 12 }}>
       <VStack align="stretch" gap={6}>
         {/* Hero card */}
-        <Box bg="rgba(23,35,53,0.75)" border="1px solid" borderColor="rgba(255,255,255,0.08)" rounded="2xl" p={{ base: 6, md: 8 }} backdropFilter="blur(12px)">
+        <Box bg="linear-gradient(to bottom right, rgba(0,82,255,0.15), rgba(0,209,178,0.15))" border="1px solid" borderColor="rgba(255,255,255,0.08)" rounded="2xl" p={{ base: 6, md: 8 }} backdropFilter="blur(12px)">
           <Heading size="lg" color="white" mb={2}>QuantumSwap Documentation</Heading>
           <Text color="whiteAlpha.800">A concise guide to get productive quickly.</Text>
         </Box>

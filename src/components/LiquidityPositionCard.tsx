@@ -97,10 +97,12 @@ export function LiquidityPositionCard({
         <Box>
           <VStack align="stretch" gap={4} pt={4}>
             <Box h="1px" bg="whiteAlpha.200" />
-            <RemoveLiquidityComponent
-              pairAddress={pairAddress}
-              onClose={onToggle} // Truyền hàm onToggle để đóng từ bên trong
-            />
+            <Flex justify="center">
+              <RemoveLiquidityComponent
+                pairAddress={pairAddress}
+                onClose={onToggle} // Truyền hàm onToggle để đóng từ bên trong
+              />
+            </Flex>
           </VStack>
         </Box>
       )}

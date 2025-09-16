@@ -19,6 +19,7 @@ type Output = {
   pairExists: boolean;
   reserves: { reserveA: bigint; reserveB: bigint } | null;
   pairMissing: boolean;
+  totalSupply?: bigint;
   estimatedAmountA?: string;
   estimatedAmountB?: string;
   priceAB?: number; // tokenB per tokenA
@@ -52,6 +53,14 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
     address: pairExists ? pairAddress : undefined,
     abi: pairAbi as Abi,
     functionName: "getReserves",
+    args: pairExists ? [] : undefined,
+    query: { enabled: pairExists },
+  });
+
+  const totalSupplyRead = useReadContract({
+    address: pairExists ? pairAddress : undefined,
+    abi: pairAbi as Abi,
+    functionName: "totalSupply",
     args: pairExists ? [] : undefined,
     query: { enabled: pairExists },
   });
@@ -158,6 +167,7 @@ export function useLiquidityCalculations({ tokenA, tokenB, amountA, amountB }: I
     pairExists,
     pairMissing,
     reserves,
+    totalSupply: (totalSupplyRead.data as bigint | undefined),
     estimatedAmountA,
     estimatedAmountB,
     priceAB,

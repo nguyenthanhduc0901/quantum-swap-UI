@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { TopProgress } from "../components/ui/TopProgress";
+import { CookieConsent } from "@/components/ui/CookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,6 +69,7 @@ export default function RootLayout({
               </Suspense>
             </main>
             <Footer />
+            <CookieConsent />
           </div>
         </Providers>
       </body>
